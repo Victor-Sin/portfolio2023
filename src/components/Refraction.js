@@ -4,7 +4,7 @@ import {DoubleSide, PlaneGeometry, RepeatWrapping} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,time,min, float, int, div, Fn, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, uv, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {screenUV,time,min,array, float, int, uniform, Fn, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, uv, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 
 export default function Refraction(){
     const meshRef = useRef()
@@ -16,7 +16,31 @@ export default function Refraction(){
     textureNoise.wrapT = RepeatWrapping
     textureNoise.wrapS = RepeatWrapping
 
+    const uniforms = useMemo(() => {
+        return {
+            CAMERA_HEIGHT: uniform(10),
+            CAMERA_TILT_ANGLE: uniform(0.97),
+            PROGRESS: uniform(0)
+        }
+    },[])
+
+    const props = useControls(
+        {
+            CAMERA_HEIGHT: { value: uniforms.CAMERA_HEIGHT.value, min: -20, max: 20, onChange: (value) => {
+                uniforms.CAMERA_HEIGHT.value = value
+            }},
+            CAMERA_TILT_ANGLE: { value: uniforms.CAMERA_TILT_ANGLE.value, min: -2, max: 2, onChange: (value) => {
+                uniforms.CAMERA_TILT_ANGLE.value = value
+            } },
+            PROGRESS: { value: uniforms.PROGRESS.value, min: 0, max: 1, onChange: (value) => {
+                uniforms.PROGRESS.value = value
+            } }
+        }
+    )
+
     
+  
+
     const DISTANCE_BETWEEN_LINES = float( 0.1 );
     const WAVE_GEO_ITERATIONS = int( int( 2 ) );
     const WAVE_BASE_HEIGHT = float( 1.5 );
@@ -25,12 +49,7 @@ export default function Refraction(){
     const WAVE_FREQUENCY = float( 0.137 );
     const RAYMARCH_STEPS = int( int( 10 ) );
 
-    const props = useControls(
-        {
-            CAMERA_HEIGHT: { value: 10, min: -20, max: 20 },
-            CAMERA_TILT_ANGLE: { value: 0.97, min: -2, max: 2 },
-        }
-    )
+ 
     const { size } = useThree()
     const aspect = size.width / size.height
     
@@ -263,10 +282,45 @@ export default function Refraction(){
 
 
     function fragmentMat(mat, aspectValue){
+       // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
+       const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(5.0), float(15.0), float(20.0)]);
+       const tiltKeyframes = array([float(0.65), float(0.97), float(1.53), float(2.1), float(2.8), float(3.14)]);
+       const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
+         
+       // TROUVER L'INTERVALLE COURANT AUTOMATIQUEMENT
+
+       
+       // Trouver entre quels points clés nous sommes
+       const segmentIndex = float(
+        step( progressBreakpoints.element(1), uniforms.PROGRESS)
+        .add(step(progressBreakpoints.element(2), uniforms.PROGRESS))
+        .add(step(progressBreakpoints.element(3), uniforms.PROGRESS))
+        .add(step(progressBreakpoints.element(4), uniforms.PROGRESS))
+        .add(step(progressBreakpoints.element(5), uniforms.PROGRESS))
+    );
+
+       // CALCUL DU PROGRÈS LOCAL DANS LE SEGMENT [0, 1]
+       const segmentStart = progressBreakpoints.element(segmentIndex);
+       const segmentEnd = progressBreakpoints.element(segmentIndex.add(1));
+       const localProgress = smoothstep(segmentStart, segmentEnd, uniforms.PROGRESS).toVar();
+       
+       // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
+ 
+       const cameraDepth = mix(
+           depthKeyframes.element(segmentIndex), 
+           depthKeyframes.element(segmentIndex.add(1)), 
+           localProgress
+       ).toVar();
+       
+       const cameraTiltAngle = mix(
+           tiltKeyframes.element(segmentIndex), 
+           tiltKeyframes.element(segmentIndex.add(1)), 
+           localProgress
+       ).toVar();
 
         const lineLimit = float( 0.0 ).toVar();
-        const cameraAngles = vec3( float( 0.0 ), props.CAMERA_TILT_ANGLE, float( 0.0 ) ).toVar();
-        const rayOrigin = vec3( float( 0.0 ), props.CAMERA_HEIGHT, float( 2.0 ) ).toVar();
+        const cameraAngles = vec3( float( 0.0 ), cameraTiltAngle, float( 0.0 ) ).toVar();
+        const rayOrigin = vec3( float( 0. ), 10, cameraDepth).toVar();
         // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
         // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
         const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
@@ -285,7 +339,7 @@ export default function Refraction(){
         })
         fragmentMat(mat, aspect)
         return mat;
-    },[aspect])
+    },[aspect,])
 
     const planeZ = 1.5
     const { camera, viewport } = useThree()
@@ -296,6 +350,7 @@ export default function Refraction(){
         glassWallRef.current.visible = false;
         gl.setRenderTarget(mainRenderTarget);
         gl.render(scene, camera);
+
 
         // Pass the texture data to our shader material
         gl.setRenderTarget(null);
