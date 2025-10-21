@@ -41,12 +41,12 @@ export default function Refraction(){
     
   
 
-    const DISTANCE_BETWEEN_LINES = float( 0.1 );
+    const DISTANCE_BETWEEN_LINES = float( 0.2 );
     const WAVE_GEO_ITERATIONS = int( int( 2 ) );
-    const WAVE_BASE_HEIGHT = float( 1.5 );
-    const WAVE_CHOPPINESS = float( 2.5 );
-    const WAVE_ANIM_SPEED = float( 0.8 );
-    const WAVE_FREQUENCY = float( 0.137 );
+    const WAVE_BASE_HEIGHT = float( 1.25 );
+    const WAVE_CHOPPINESS = float( 5. );
+    const WAVE_ANIM_SPEED = float( 1.8 );
+    const WAVE_FREQUENCY = float( 0.075 );
     const RAYMARCH_STEPS = int( int( 10 ) );
 
  
@@ -170,47 +170,6 @@ export default function Refraction(){
         ]
     } );
     
-    const traceOceanSurface = /*#__PURE__*/ Fn( ( [ rayOrigin_immutable, rayDirection_immutable, outIntersection ] ) => {
-    
-        const rayDirection = vec3( rayDirection_immutable ).toVar();
-        const rayOrigin = vec3( rayOrigin_immutable ).toVar();
-        const nearDistance = float( 0.0 ).toVar();
-        const farDistance = float( 100.0 ).toVar();
-        const farHeight = float( oceanHeightMap( rayOrigin.add( rayDirection.mul( farDistance ) ) ) ).toVar();
-    
-        If( farHeight.greaterThan( 0.0 ), () => {
-    
-            return farDistance;
-    
-        } );
-    
-        const nearHeight = float( oceanHeightMap( rayOrigin.add( rayDirection.mul( nearDistance ) ) ) ).toVar();
-        const intersectionDistance = float( 0.0 ).toVar();
-    
-        Loop( { start: int( 0 ), end: RAYMARCH_STEPS }, ( { i } ) => {
-            // Correct secant step using heights (nearHeight and farHeight)
-            intersectionDistance.assign( mix( nearDistance, farDistance, nearHeight.div( nearHeight.sub( farHeight ) ) ) )
-            outIntersection.assign( rayOrigin.add( rayDirection.mul( intersectionDistance ) ) );
-            const currentHeight = float( oceanHeightMap( outIntersection ) ).toVar();
-    
-            If( currentHeight.lessThan( 0.0 ), () => {
-    
-                farDistance.assign( intersectionDistance );
-                farHeight.assign( currentHeight );
-    
-            } ).Else( () => {
-    
-                nearDistance.assign( intersectionDistance );
-                nearHeight.assign( currentHeight );
-    
-            } );
-    
-        } );
-    
-        return intersectionDistance;
-    
-    } );
-    
     const getRayDirection = /*#__PURE__*/ Fn( ( [ normCoords_immutable, cameraAngles_immutable ] ) => {
     
         const cameraAngles = vec3( cameraAngles_immutable ).toVar();
@@ -228,9 +187,10 @@ export default function Refraction(){
         ]
     } );
     
-    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable ] ) => {
+    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable ] ) => {
     
-        const lineLimit = float( lineLimit_immutable ).toVar();
+        const lineLimitTop = float( lineLimit_immutable ).toVar();
+        const lineLimitBottom = float( lineLimitBis_immutable ).toVar();
         const rayOrigin = vec3( rayOrigin_immutable ).toVar();
         const cameraAngles = vec3( cameraAngles_immutable ).toVar();
         const normalizedCoords = vec2( normalizedCoords_immutable ).toVar();
@@ -267,7 +227,7 @@ export default function Refraction(){
         intensity.assign( float(1).sub(min(intensity,1)) );
         intensity.assign(pow(intensity,float(1.0/2.2)));
     
-        return step( lineLimit, distanceCoord ).mul( vec4( intensity ) );
+        return step( lineLimitTop, distanceCoord ).mul(step( distanceCoord, lineLimitBottom)).mul( vec4( intensity ) )
     
     } ).setLayout( {
         name: 'computeLineColor',
@@ -283,8 +243,8 @@ export default function Refraction(){
 
     function fragmentMat(mat, aspectValue){
        // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
-       const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(5.0), float(15.0), float(20.0)]);
-       const tiltKeyframes = array([float(0.65), float(0.97), float(1.53), float(2.1), float(2.8), float(3.14)]);
+       const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(20.0), float(15.0), float(20.0)]);
+       const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
        const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
          
        // TROUVER L'INTERVALLE COURANT AUTOMATIQUEMENT
@@ -318,7 +278,8 @@ export default function Refraction(){
            localProgress
        ).toVar();
 
-        const lineLimit = float( 0.0 ).toVar();
+        const lineLimitTop = float( 0.0 ).toVar();
+        const lineLimitBottom = float( 115.0 ).toVar();
         const cameraAngles = vec3( float( 0.0 ), cameraTiltAngle, float( 0.0 ) ).toVar();
         const rayOrigin = vec3( float( 0. ), 10, cameraDepth).toVar();
         // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
@@ -327,7 +288,7 @@ export default function Refraction(){
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( aspectValue );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimit ) ).toVar();
+        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom ) ).toVar();
         mat.colorNode = baseLineColor
     }
 
