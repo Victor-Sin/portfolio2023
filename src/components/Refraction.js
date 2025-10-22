@@ -4,7 +4,7 @@ import {DoubleSide, PlaneGeometry, RepeatWrapping} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,time,min,array, float, int, uniform, Fn, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, uv, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {screenUV,time,min,array, float,viewportSize,distance, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, uv, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 
 export default function Refraction(){
     const meshRef = useRef()
@@ -187,7 +187,7 @@ export default function Refraction(){
         ]
     } );
     
-    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable ] ) => {
+    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable,inBetween_immutable ] ) => {
     
         const lineLimitTop = float( lineLimit_immutable ).toVar();
         const lineLimitBottom = float( lineLimitBis_immutable ).toVar();
@@ -221,11 +221,13 @@ export default function Refraction(){
                 } );
             } );
         } );
+
+        const distanceLines = mix(DISTANCE_BETWEEN_LINES,DISTANCE_BETWEEN_LINES.mul(0.5),inBetween_immutable);
         
-        const distanceCoord = float( surfacePoint.z.div( DISTANCE_BETWEEN_LINES ).add( surfacePoint.y.add( sub( 1.0, normalizedCoords.y ).add( surfacePoint.y ).mul( 0.35 ) ).mul( 3.0 ) ) ).toVar();
+        const distanceCoord = float( surfacePoint.z.div( distanceLines ).add( surfacePoint.y.add( sub( 1.0, normalizedCoords.y ).add( surfacePoint.y ).mul( 0.35 ) ).mul( 3.0 ) ) ).toVar();
         const intensity = float( abs( fract( distanceCoord ).sub( 0.5 ) ).div( fwidth( distanceCoord ) ) ).toVar();
         intensity.assign( float(1).sub(min(intensity,1)) );
-        intensity.assign(pow(intensity,float(1.0/2.2)));
+        intensity.assign(pow(intensity,float(4.0/2.2)));
     
         return step( lineLimitTop, distanceCoord ).mul(step( distanceCoord, lineLimitBottom)).mul( vec4( intensity ) )
     
@@ -241,55 +243,100 @@ export default function Refraction(){
     } );
 
 
+    const partionProgress = Fn(([progress_ref,partition_sequence,lengthPartition]) => {
+        const sequenceIndex = float(0).toVar()
+        Loop({start: int(0), end: lengthPartition}, ({i}) => {
+            sequenceIndex.addAssign(step(partition_sequence.element(float(i).add(float(1))), progress_ref))
+        })
+        const segmentStart = partition_sequence.element(sequenceIndex);
+        const segmentEnd = partition_sequence.element(sequenceIndex.add(float(1)));
+        const localProgress = smoothstep(segmentStart, segmentEnd, progress_ref);
+        
+        return vec2(localProgress,sequenceIndex)
+    })
+
+    const cameraAnimation = Fn(([earlyProgress,inBetween]) => {
+        // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
+        const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(20.0), float(15.0), float(20.0)]);
+        const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
+        const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
+        const numberBreakpoints = int(6);
+          
+        const cameraProgress = partionProgress(earlyProgress, progressBreakpoints, numberBreakpoints);
+        // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
+        const cameraDepth = mix(
+            depthKeyframes.element(cameraProgress.y), 
+            depthKeyframes.element(cameraProgress.y.add(float(1))), 
+            cameraProgress.x
+        ).toVar();
+        
+        const cameraTiltAngle = mix(
+            tiltKeyframes.element(cameraProgress.y), 
+            tiltKeyframes.element(cameraProgress.y.add(float(1))), 
+            cameraProgress.x
+        ).toVar();
+
+        If(inBetween.greaterThan(0.0), () => {
+            cameraTiltAngle.assign(tiltKeyframes.element(int(2)).mul(0.9));
+            cameraDepth.assign(depthKeyframes.element(int(2)).mul(0.975));
+        })
+
+        return vec2(cameraDepth, cameraTiltAngle)
+    })
+
+
+    const circle = Fn(([shadertoyUV,inBetweenLimits,earlyProgressLimits]) => {
+        const ratio = viewportSize.x.div(viewportSize.y);
+        const circle = distance(vec2(0,0),shadertoyUV.mul(ratio)).toVar();
+        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y, uniforms.PROGRESS).toVar()
+
+        const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(1.0)]);
+        const valuesProgress = array([float(0), float(1.0), float(1.0), float(0.0)]);
+
+        const numberBreakpoints = int(4);
+
+        const circleProgressPartition = partionProgress(limit, progressBreakpoints, numberBreakpoints);
+        const circleProgress = mix(
+            valuesProgress.element(circleProgressPartition.y), 
+            valuesProgress.element(circleProgressPartition.y.add(float(1))), 
+            circleProgressPartition.x
+        ).mul(10).toVar();
+
+        const bottomLimit = circleProgress.x.sub(circleProgress.x.mul(0.0025));
+        const outerBorder = float(1).sub(step(circleProgress.x,circle));
+        const innerBorder = float(1).sub(step(bottomLimit,circle));
+        const inner = float(1).sub(smoothstep(0,circleProgress.x.mul(1.1),circle));
+        const border = outerBorder.sub(innerBorder);
+
+        return vec2(border,inner)
+    })
+
     function fragmentMat(mat, aspectValue){
-       // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
-       const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(20.0), float(15.0), float(20.0)]);
-       const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
-       const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
-         
-       // TROUVER L'INTERVALLE COURANT AUTOMATIQUEMENT
+        const earlyProgressLimits = vec2(0,0.25);
+        const earlyProgress = smoothstep(earlyProgressLimits.x, earlyProgressLimits.y, uniforms.PROGRESS).toVar()
 
-       
-       // Trouver entre quels points clés nous sommes
-       const segmentIndex = float(
-        step( progressBreakpoints.element(1), uniforms.PROGRESS)
-        .add(step(progressBreakpoints.element(2), uniforms.PROGRESS))
-        .add(step(progressBreakpoints.element(3), uniforms.PROGRESS))
-        .add(step(progressBreakpoints.element(4), uniforms.PROGRESS))
-        .add(step(progressBreakpoints.element(5), uniforms.PROGRESS))
-    );
+        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.75),.8);
+        const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y,uniforms.PROGRESS));
 
-       // CALCUL DU PROGRÈS LOCAL DANS LE SEGMENT [0, 1]
-       const segmentStart = progressBreakpoints.element(segmentIndex);
-       const segmentEnd = progressBreakpoints.element(segmentIndex.add(1));
-       const localProgress = smoothstep(segmentStart, segmentEnd, uniforms.PROGRESS).toVar();
-       
-       // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
- 
-       const cameraDepth = mix(
-           depthKeyframes.element(segmentIndex), 
-           depthKeyframes.element(segmentIndex.add(1)), 
-           localProgress
-       ).toVar();
-       
-       const cameraTiltAngle = mix(
-           tiltKeyframes.element(segmentIndex), 
-           tiltKeyframes.element(segmentIndex.add(1)), 
-           localProgress
-       ).toVar();
+        const cameraAnim = cameraAnimation(earlyProgress,inBetween)
 
-        const lineLimitTop = float( 0.0 ).toVar();
-        const lineLimitBottom = float( 115.0 ).toVar();
-        const cameraAngles = vec3( float( 0.0 ), cameraTiltAngle, float( 0.0 ) ).toVar();
-        const rayOrigin = vec3( float( 0. ), 10, cameraDepth).toVar();
+        const lineLimitTop = mix(float( 0.0 ),float( -100.0 ),inBetween).toVar();
+        const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween).toVar();
+        const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
+        const rayOrigin = vec3( float( 0. ), 10, cameraAnim.x).toVar();
         // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
         // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
         const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( aspectValue );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom ) ).toVar();
-        mat.colorNode = baseLineColor
+        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween ) ).toVar();
+        
+        const circleVal = circle(shadertoyUV,inBetweenLimits);
+        const circleColor = mix(float(1),circleVal.y,inBetween);
+    
+        
+        mat.colorNode = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.1))
     }
 
 
