@@ -3,7 +3,7 @@ import Image from "next/image";
 import styles from "@/app/page.module.css";
 import React from 'react';
 import {Canvas} from "@react-three/fiber";
-import {AdaptiveDpr, AdaptiveEvents} from "@react-three/drei";
+import {AdaptiveDpr, AdaptiveEvents, Stats} from "@react-three/drei";
 import {WebGPURenderer} from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import * as THREE from "three";
@@ -19,6 +19,7 @@ export default function Home() {
             await renderer.init()
             return renderer
           }}>
+            <Stats></Stats>
             <AdaptiveDpr pixelated />
             <AdaptiveEvents />
             <Environment

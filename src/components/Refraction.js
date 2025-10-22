@@ -4,7 +4,7 @@ import {DoubleSide, PlaneGeometry, RepeatWrapping} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,time,min,array, float,viewportSize,distance, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, uv, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {screenUV,time,min,array, float,viewportSize,distance, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 
 export default function Refraction(){
     const meshRef = useRef()
@@ -41,7 +41,7 @@ export default function Refraction(){
     
   
 
-    const DISTANCE_BETWEEN_LINES = float( 0.2 );
+    const DISTANCE_BETWEEN_LINES = float( 0.15 );
     const WAVE_GEO_ITERATIONS = int( int( 2 ) );
     const WAVE_BASE_HEIGHT = float( 1.25 );
     const WAVE_CHOPPINESS = float( 5. );
@@ -187,7 +187,7 @@ export default function Refraction(){
         ]
     } );
     
-    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable,inBetween_immutable ] ) => {
+    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable,inBetween_immutable,isLast_immutable ] ) => {
     
         const lineLimitTop = float( lineLimit_immutable ).toVar();
         const lineLimitBottom = float( lineLimitBis_immutable ).toVar();
@@ -222,7 +222,7 @@ export default function Refraction(){
             } );
         } );
 
-        const distanceLines = mix(DISTANCE_BETWEEN_LINES,DISTANCE_BETWEEN_LINES.mul(0.5),inBetween_immutable);
+        const distanceLines = mix(DISTANCE_BETWEEN_LINES,DISTANCE_BETWEEN_LINES.mul(0.5),select(isLast_immutable.greaterThan(0.0),0,inBetween_immutable));
         
         const distanceCoord = float( surfacePoint.z.div( distanceLines ).add( surfacePoint.y.add( sub( 1.0, normalizedCoords.y ).add( surfacePoint.y ).mul( 0.35 ) ).mul( 3.0 ) ) ).toVar();
         const intensity = float( abs( fract( distanceCoord ).sub( 0.5 ) ).div( fwidth( distanceCoord ) ) ).toVar();
@@ -255,14 +255,16 @@ export default function Refraction(){
         return vec2(localProgress,sequenceIndex)
     })
 
-    const cameraAnimation = Fn(([earlyProgress,inBetween]) => {
+    const cameraAnimation = Fn(([earlyProgress,inBetween,lastProgress, inLastProgress]) => {
         // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
+        const progress = earlyProgress;
+
         const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(20.0), float(15.0), float(20.0)]);
         const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
         const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
         const numberBreakpoints = int(6);
           
-        const cameraProgress = partionProgress(earlyProgress, progressBreakpoints, numberBreakpoints);
+        const cameraProgress = partionProgress(progress, progressBreakpoints, numberBreakpoints);
         // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
         const cameraDepth = mix(
             depthKeyframes.element(cameraProgress.y), 
@@ -283,6 +285,33 @@ export default function Refraction(){
 
         return vec2(cameraDepth, cameraTiltAngle)
     })
+
+    const cameraAnimationBis = Fn(([lastProgress, inLastProgress]) => {
+        // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
+        const progress = lastProgress;
+
+        const depthKeyframes = array([float(-2.0), float(1.0), float(5.0), float(7)]);
+        const tiltKeyframes = array([float(0.65), float(0.87), float(1.), float(1.98)]);
+        const progressBreakpoints = array([float(0.0), float(0.25), float(0.66), float(1)]);
+        const numberBreakpoints = int(4);
+          
+        const cameraProgress = partionProgress(progress, progressBreakpoints, numberBreakpoints);
+        // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
+        const cameraDepth = mix(
+            depthKeyframes.element(cameraProgress.y), 
+            depthKeyframes.element(cameraProgress.y.add(float(1))), 
+            cameraProgress.x
+        ).toVar();
+        
+        const cameraTiltAngle = mix(
+            tiltKeyframes.element(cameraProgress.y), 
+            tiltKeyframes.element(cameraProgress.y.add(float(1))), 
+            cameraProgress.x
+        ).toVar();
+
+        return vec2(cameraDepth, cameraTiltAngle)
+    })
+
 
 
     const circle = Fn(([shadertoyUV,inBetweenLimits,earlyProgressLimits]) => {
@@ -311,32 +340,58 @@ export default function Refraction(){
         return vec2(border,inner)
     })
 
+    const computeLines = Fn(([earlyProgress,inBetween,shadertoyUV]) => {
+        const cameraAnim = cameraAnimation(earlyProgress,inBetween)
+        const lineLimitTop = mix(float( 0.0 ),float( -100.0 ),inBetween)
+        const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween);
+        const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
+        const rayOrigin = vec3( float( 0.), 10, cameraAnim.x).toVar();
+        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween, float(0) ) ).mul(0.5)
+
+        return baseLineColor;
+    })
+
+    const computeLinesLast = Fn(([lastProgress,inLastProgress,shadertoyUV,inBetween]) => {
+        const baseLineColorBis = float(0).toVar();
+
+        If(inLastProgress.greaterThan(0.0), () => {
+            const cameraAnimBis = cameraAnimationBis(lastProgress,inLastProgress)
+            const lineLimitTopBis = float(-20);
+            const lineLimitBottomBis = float(60);
+            const rayOriginBis = vec3( float( 0.), 10, cameraAnimBis.x).toVar();
+            const cameraAnglesBis = vec3( float( 0.0 ), cameraAnimBis.y, float( 0.0 ) ).toVar();
+            baseLineColorBis.assign(vec4( computeLineColor( shadertoyUV, cameraAnglesBis, rayOriginBis, lineLimitTopBis, lineLimitBottomBis, inBetween, float(1) ) ).mul(0.5));
+        })
+        
+        return baseLineColorBis;
+    })
+
     function fragmentMat(mat, aspectValue){
         const earlyProgressLimits = vec2(0,0.25);
         const earlyProgress = smoothstep(earlyProgressLimits.x, earlyProgressLimits.y, uniforms.PROGRESS).toVar()
 
-        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.75),.8);
-        const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y,uniforms.PROGRESS));
+        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.95),.8);
+        const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y.mul(0.95),uniforms.PROGRESS));
 
-        const cameraAnim = cameraAnimation(earlyProgress,inBetween)
+        const lastLimits = vec2(inBetweenLimits.y.mul(0.725),1.1);
+        const lastProgress = smoothstep(lastLimits.x, lastLimits.y, uniforms.PROGRESS).toVar()
+        const inLastProgress = step(lastLimits.x,uniforms.PROGRESS).sub(step(lastLimits.y,uniforms.PROGRESS));
 
-        const lineLimitTop = mix(float( 0.0 ),float( -100.0 ),inBetween).toVar();
-        const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween).toVar();
-        const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
-        const rayOrigin = vec3( float( 0. ), 10, cameraAnim.x).toVar();
+   
         // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
         // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
         const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( aspectValue );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween ) ).toVar();
-        
+
+        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV)
+        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween)
         const circleVal = circle(shadertoyUV,inBetweenLimits);
-        const circleColor = mix(float(1),circleVal.y,inBetween);
+        const circleColor = mix(float(1),circleVal.y,inBetween).mul(2);
     
         
-        mat.colorNode = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.1))
+        mat.colorNode = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.25)).add(baseLineColorBis)
     }
 
 
