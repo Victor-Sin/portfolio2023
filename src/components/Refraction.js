@@ -1,10 +1,11 @@
 import {useFBO, useTexture} from "@react-three/drei";
 import {useMemo, useRef} from "react";
-import {DoubleSide, PlaneGeometry, RepeatWrapping} from "three";
+import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,time,min,array, float,viewportSize,distance, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {screenUV,time,min,array,exp, float,viewportSize,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import { computeLineColor } from "./Lines";
 
 export default function Refraction(){
     const meshRef = useRef()
@@ -20,7 +21,8 @@ export default function Refraction(){
         return {
             CAMERA_HEIGHT: uniform(10),
             CAMERA_TILT_ANGLE: uniform(0.97),
-            PROGRESS: uniform(0)
+            PROGRESS: uniform(0),
+            BACKGROUND_COLOR: uniform(new Color('#FDE7C5'))
         }
     },[])
 
@@ -32,216 +34,22 @@ export default function Refraction(){
             CAMERA_TILT_ANGLE: { value: uniforms.CAMERA_TILT_ANGLE.value, min: -2, max: 2, onChange: (value) => {
                 uniforms.CAMERA_TILT_ANGLE.value = value
             } },
-            PROGRESS: { value: uniforms.PROGRESS.value, min: 0, max: 1, onChange: (value) => {
+            PROGRESS: { value: uniforms.PROGRESS.value, min: 0, max: 1,step: 0.001, onChange: (value) => {
                 uniforms.PROGRESS.value = value
             } }
         }
     )
 
-    
-  
 
-    const DISTANCE_BETWEEN_LINES = float( 0.15 );
-    const WAVE_GEO_ITERATIONS = int( int( 2 ) );
-    const WAVE_BASE_HEIGHT = float( 1.25 );
-    const WAVE_CHOPPINESS = float( 5. );
-    const WAVE_ANIM_SPEED = float( 1.8 );
-    const WAVE_FREQUENCY = float( 0.075 );
-    const RAYMARCH_STEPS = int( int( 10 ) );
-
- 
     const { size } = useThree()
     const aspect = size.width / size.height
     
-    const animatedWaveTime = /*#__PURE__*/ Fn( () => {
-    
-        return add( 1.0, time.mul( WAVE_ANIM_SPEED ) );
-    
-    } ).setLayout( {
-        name: 'animatedWaveTime',
-        type: 'float',
-        inputs: []
-    } );
-    
-    const OCTAVE_MATRIX = mat2( 1.6, 1.2, float( - 1.2 ), 1.6 );
-    
-    const createRotationMatrix = /*#__PURE__*/ Fn( ( [ eulerAngles_immutable ] ) => {
-    
-        const eulerAngles = vec3( eulerAngles_immutable ).toVar();
-        const sinCosX = vec2( sin( eulerAngles.x ), cos( eulerAngles.x ) ).toVar();
-        const sinCosY = vec2( sin( eulerAngles.y ), cos( eulerAngles.y ) ).toVar();
-        const sinCosZ = vec2( sin( eulerAngles.z ), cos( eulerAngles.z ) ).toVar();
-        const rotationMatrix = mat3().toVar();
-        rotationMatrix.element( int( 0 ) ).assign( vec3( sinCosX.y.mul( sinCosZ.y ).add( sinCosX.x.mul( sinCosY.x ).mul( sinCosZ.x ) ), sinCosX.y.mul( sinCosY.x ).mul( sinCosZ.x ).add( sinCosZ.y.mul( sinCosX.x ) ), sinCosY.y.negate().mul( sinCosZ.x ) ) );
-        rotationMatrix.element( int( 1 ) ).assign( vec3( sinCosY.y.negate().mul( sinCosX.x ), sinCosX.y.mul( sinCosY.y ), sinCosY.x ) );
-        rotationMatrix.element( int( 2 ) ).assign( vec3( sinCosZ.y.mul( sinCosX.x ).mul( sinCosY.x ).add( sinCosX.y.mul( sinCosZ.x ) ), sinCosX.x.mul( sinCosZ.x ).sub( sinCosX.y.mul( sinCosZ.y ).mul( sinCosY.x ) ), sinCosY.y.mul( sinCosZ.y ) ) );
-    
-        return rotationMatrix;
-    
-    } ).setLayout( {
-        name: 'createRotationMatrix',
-        type: 'mat3',
-        inputs: [
-            { name: 'eulerAngles', type: 'vec3' }
-        ]
-    } );
-    
-    const randomHash = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
-    
-        const p = vec2( p_immutable ).toVar();
-        const h = float( dot( p, vec2( 127.1, 311.7 ) ) ).toVar();
-    
-        return fract( sin( h ).mul( 43758.5453123 ) );
-    
-    } ).setLayout( {
-        name: 'randomHash',
-        type: 'float',
-        inputs: [
-            { name: 'p', type: 'vec2' }
-        ]
-    } );
-    
-    const perlinNoise = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
-    
-        const p = vec2( p_immutable ).toVar();
-        const integerPart = vec2( floor( p ) ).toVar();
-        const fractionalPart = vec2( fract( p ) ).toVar();
-        const smoothedCurve = vec2( fractionalPart.mul( fractionalPart ).mul( sub( 3.0, mul( 2.0, fractionalPart ) ) ) ).toVar();
-    
-        return float( - 1.0 ).add( mul( 2.0, mix( mix( randomHash( integerPart.add( vec2( 0.0, 0.0 ) ) ), randomHash( integerPart.add( vec2( 1.0, 0.0 ) ) ), smoothedCurve.x ), mix( randomHash( integerPart.add( vec2( 0.0, 1.0 ) ) ), randomHash( integerPart.add( vec2( 1.0, 1.0 ) ) ), smoothedCurve.x ), smoothedCurve.y ) ) );
-    
-    } ).setLayout( {
-        name: 'perlinNoise',
-        type: 'float',
-        inputs: [
-            { name: 'p', type: 'vec2' }
-        ]
-    } );
-    
-    const generateWaveOctave = /*#__PURE__*/ Fn( ( [ uv_immutable, choppiness_immutable ] ) => {
-    
-        const choppiness = float( choppiness_immutable ).toVar();
-        const uv = vec2( uv_immutable ).toVar();
-        uv.addAssign( perlinNoise( uv ) );
-        const waveShape = vec2( sub( 1.0, abs( sin( uv ) ) ) ).toVar();
-        const secondaryWave = vec2( abs( cos( uv ) ) ).toVar();
-        waveShape.assign( mix( waveShape, secondaryWave, waveShape ) );
-    
-        return pow( sub( 1.0, waveShape.x.mul( waveShape.y ) ), choppiness );
-    
-    } ).setLayout( {
-        name: 'generateWaveOctave',
-        type: 'float',
-        inputs: [
-            { name: 'uv', type: 'vec2' },
-            { name: 'choppiness', type: 'float' }
-        ]
-    } );
-    
-    const oceanHeightMap = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
-    
-        const p = vec3( p_immutable ).toVar();
-        const frequency = float( WAVE_FREQUENCY ).toVar();
-        const amplitude = float( WAVE_BASE_HEIGHT ).toVar();
-        const choppiness = float( WAVE_CHOPPINESS ).toVar();
-        const uv = vec2( p.xz ).toVar();
-        uv.x.mulAssign( 2. );
-        const totalHeight = float( 0.0 ).toVar();
-    
-        Loop( { start: int( 0 ), end: WAVE_GEO_ITERATIONS }, ( { i } ) => {
-    
-            const wave = float( generateWaveOctave( uv.add( animatedWaveTime() ).mul( frequency ), choppiness ) ).toVar();
-            wave.addAssign( generateWaveOctave( uv.sub( animatedWaveTime() ).mul( frequency ), choppiness ) );
-            totalHeight.addAssign( wave.mul( amplitude ) );
-            uv.mulAssign( OCTAVE_MATRIX );
-            frequency.mulAssign( 1.9 );
-            amplitude.mulAssign( 0.22 );
-            choppiness.assign( mix( choppiness, 1.0, 0.2 ) );
-    
-        } );
-    
-        return p.y.sub( totalHeight );
-    
-    } ).setLayout( {
-        name: 'oceanHeightMap',
-        type: 'float',
-        inputs: [
-            { name: 'p', type: 'vec3' }
-        ]
-    } );
-    
-    const getRayDirection = /*#__PURE__*/ Fn( ( [ normCoords_immutable, cameraAngles_immutable ] ) => {
-    
-        const cameraAngles = vec3( cameraAngles_immutable ).toVar();
-        const normCoords = vec2( normCoords_immutable ).toVar();
-        const dir = vec3( normalize( vec3( normCoords.xy, float( - 2.0 ) ) ) ).toVar();
-    
-        return normalize( dir ).mul( createRotationMatrix( cameraAngles ) );
-    
-    } ).setLayout( {
-        name: 'getRayDirection',
-        type: 'vec3',
-        inputs: [
-            { name: 'normCoords', type: 'vec2' },
-            { name: 'cameraAngles', type: 'vec3' }
-        ]
-    } );
-    
-    const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable, cameraAngles_immutable, rayOrigin_immutable, lineLimit_immutable,lineLimitBis_immutable,inBetween_immutable,isLast_immutable ] ) => {
-    
-        const lineLimitTop = float( lineLimit_immutable ).toVar();
-        const lineLimitBottom = float( lineLimitBis_immutable ).toVar();
-        const rayOrigin = vec3( rayOrigin_immutable ).toVar();
-        const cameraAngles = vec3( cameraAngles_immutable ).toVar();
-        const normalizedCoords = vec2( normalizedCoords_immutable ).toVar();
-        const rayDirection = vec3( getRayDirection( normalizedCoords, cameraAngles ) ).toVar();
-        const surfacePoint = vec3().toVar();
-        
-        // Inline traceOceanSurface
-        const nearDistance = float( 0.0 ).toVar();
-        const farDistance = float( 100.0 ).toVar();
-        const farHeight = float( oceanHeightMap( rayOrigin.add( rayDirection.mul( farDistance ) ) ) ).toVar();
-        const intersectionDistance = float( 0.0 ).toVar();
-        
-        If( farHeight.greaterThan( 0.0 ), () => {
-            intersectionDistance.assign( farDistance );
-            surfacePoint.assign( rayOrigin.add( rayDirection.mul( intersectionDistance ) ) );
-        } ).Else( () => {
-            const nearHeight = float( oceanHeightMap( rayOrigin.add( rayDirection.mul( nearDistance ) ) ) ).toVar();
-            Loop( { start: int( 0 ), end: RAYMARCH_STEPS }, ( { i } ) => {
-                intersectionDistance.assign( mix( nearDistance, farDistance, nearHeight.div( nearHeight.sub( farHeight ) ) ) );
-                surfacePoint.assign( rayOrigin.add( rayDirection.mul( intersectionDistance ) ) );
-                const currentHeight = float( oceanHeightMap( surfacePoint ) ).toVar();
-                If( currentHeight.lessThan( 0.0 ), () => {
-                    farDistance.assign( intersectionDistance );
-                    farHeight.assign( currentHeight );
-                } ).Else( () => {
-                    nearDistance.assign( intersectionDistance );
-                    nearHeight.assign( currentHeight );
-                } );
-            } );
-        } );
 
-        const distanceLines = mix(DISTANCE_BETWEEN_LINES,DISTANCE_BETWEEN_LINES.mul(0.5),select(isLast_immutable.greaterThan(0.0),0,inBetween_immutable));
-        
-        const distanceCoord = float( surfacePoint.z.div( distanceLines ).add( surfacePoint.y.add( sub( 1.0, normalizedCoords.y ).add( surfacePoint.y ).mul( 0.35 ) ).mul( 3.0 ) ) ).toVar();
-        const intensity = float( abs( fract( distanceCoord ).sub( 0.5 ) ).div( fwidth( distanceCoord ) ) ).toVar();
-        intensity.assign( float(1).sub(min(intensity,1)) );
-        intensity.assign(pow(intensity,float(4.0/2.2)));
+    const grainTextureEffect = Fn(([_uv]) => {
+        return fract(sin(dot(_uv, vec2(12.9898, 78.233))).mul(43758.5453123))
+      })
     
-        return step( lineLimitTop, distanceCoord ).mul(step( distanceCoord, lineLimitBottom)).mul( vec4( intensity ) )
-    
-    } ).setLayout( {
-        name: 'computeLineColor',
-        type: 'vec4',
-        inputs: [
-            { name: 'normalizedCoords', type: 'vec2' },
-            { name: 'cameraAngles', type: 'vec3' },
-            { name: 'rayOrigin', type: 'vec3' },
-            { name: 'lineLimit', type: 'float' }
-        ]
-    } );
-
+   
 
     const partionProgress = Fn(([progress_ref,partition_sequence,lengthPartition]) => {
         const sequenceIndex = float(0).toVar()
@@ -315,8 +123,11 @@ export default function Refraction(){
 
 
     const circle = Fn(([shadertoyUV,inBetweenLimits,earlyProgressLimits]) => {
-        const ratio = viewportSize.x.div(viewportSize.y);
-        const circle = distance(vec2(0,0),shadertoyUV.mul(ratio)).toVar();
+        const _uv = shadertoyUV.toVar();
+        _uv.y.addAssign(.15);
+        
+        const circle = distance(vec2(0,0),shadertoyUV).toVar();
+        const circleShadow = distance(vec2(0,0),_uv).toVar();
         const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y, uniforms.PROGRESS).toVar()
 
         const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(1.0)]);
@@ -334,8 +145,10 @@ export default function Refraction(){
         const bottomLimit = circleProgress.x.sub(circleProgress.x.mul(0.0025));
         const outerBorder = float(1).sub(step(circleProgress.x,circle));
         const innerBorder = float(1).sub(step(bottomLimit,circle));
-        const inner = float(1).sub(smoothstep(0,circleProgress.x.mul(1.1),circle));
-        const border = outerBorder.sub(innerBorder);
+        const inner = float(1).sub(smoothstep(0,circleProgress.x.mul(1.25),circle));
+
+        const innerShadow = smoothstep(0,circleProgress.x.mul(1.25),circleShadow).mul(inner);
+        const border = outerBorder.sub(innerBorder).toVar();
 
         return vec2(border,inner)
     })
@@ -347,37 +160,105 @@ export default function Refraction(){
         const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
         const rayOrigin = vec3( float( 0.), 10, cameraAnim.x).toVar();
         const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween, float(0) ) ).mul(0.5)
-
+    
         return baseLineColor;
     })
-
+    
     const computeLinesLast = Fn(([lastProgress,inLastProgress,shadertoyUV,inBetween]) => {
         const baseLineColorBis = float(0).toVar();
-
+    
         If(inLastProgress.greaterThan(0.0), () => {
             const cameraAnimBis = cameraAnimationBis(lastProgress,inLastProgress)
             const lineLimitTopBis = float(-20);
             const lineLimitBottomBis = float(60);
             const rayOriginBis = vec3( float( 0.), 10, cameraAnimBis.x).toVar();
             const cameraAnglesBis = vec3( float( 0.0 ), cameraAnimBis.y, float( 0.0 ) ).toVar();
-            baseLineColorBis.assign(vec4( computeLineColor( shadertoyUV, cameraAnglesBis, rayOriginBis, lineLimitTopBis, lineLimitBottomBis, inBetween, float(1) ) ).mul(0.5));
+            baseLineColorBis.assign(vec4( computeLineColor( shadertoyUV, cameraAnglesBis, rayOriginBis, lineLimitTopBis, lineLimitBottomBis, inBetween, float(1) ) ).mul(0.75));
         })
         
         return baseLineColorBis;
     })
 
+
+
+    const colorGradient = Fn(([uv_immutable,colors,colorsPos,colorsCount]) => {
+
+        const _uv = vec2(uv_immutable).toVar();
+        const uv0 = vec2(uv_immutable).toVar();
+        const radius = length(uv0)
+        const center = oneMinus(radius)
+
+        const amp1 = float(2.1)
+        const amp2 = float(1.75)
+        const _d = float(0.8)
+        Loop({ start: 1, end: 2, type: 'float', condition: '<=' }, ({ i }) => {
+            const strength = _d.mul(center).div(i)
+           
+            _uv.x.addAssign(strength.mul(sin(_time.add(_uv.y.mul(i)))).mul(amp1))
+            _uv.y.addAssign(strength.mul(cos(_time.add(_uv.x.mul(i)))).mul(amp2))
+          })
+
+        const _time = time.mul(.25);
+
+        // Domain warping and rotation - this is a placeholder for now
+        const uvR = _uv
+        const angle = log(length(uvR)).mul(0.2)
+        uvR.assign(rotate(uvR, angle))
+        const finalColor = vec3(0).toVar()
+        const totalWeight = float(0).toVar()
+
+        // Loop through all color spots and blend them together
+        Loop({ start: 0, end: colorsCount, type: 'float' }, ({ i }) => {
+            // Calculate control point
+            // Base angle for this color spot - creates different starting positions
+            const baseAngle = i.mul(PI)
+            
+            // Calculate the position of a control point in a circular motion (using sine/cosine with the angle will place points around a circle)
+            // Note that we're using _time here, which will make these positions animated
+            const x = sin(_time.mul(i.mul(0.75)).add(baseAngle)).mul(0.5)
+            const y = cos(_time.mul(2).add(baseAngle.mul(2.5))).mul(1)
+            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.add(0.25))))
+        
+            // Get a specific color
+            const _c = colors.element(i)
+        
+            // Determine weightings
+            // Calculate distance from current fragment to this color spot
+            const dist = length(uvR.sub(pos)).toVar()
+            dist.assign(pow(dist,4.2))
+            
+            // Calculate weight based on distance - closer spots have higher weight
+            const weight = div(1, max(0, dist))
+            
+            // Accumulate color and total weight
+            finalColor.addAssign(_c.mul(weight))
+            totalWeight.addAssign(weight)
+        })
+    
+        return finalColor.div(totalWeight)
+    })
+
+
+
     function fragmentMat(mat, aspectValue){
+        const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#2C4D3E'), new Color('#1b2632')]);
+        const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0.5,0), new Vector2(0,0.5), new Vector2(0.5,0.5)])
+        const colorsCount = int(4);
+
+        const colorsBackground = uniformArray([new Color('#FDE7C5'), new Color('#AAA97F'), new Color('#E6D3A4')]);
+        const colorsPosBackground = uniformArray([new Vector2(0,-1), new Vector2(0.5,0),new Vector2(0,0)]);
+        const colorsCountBackground = int(3);
+
         const earlyProgressLimits = vec2(0,0.25);
         const earlyProgress = smoothstep(earlyProgressLimits.x, earlyProgressLimits.y, uniforms.PROGRESS).toVar()
 
         const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.95),.8);
         const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y.mul(0.95),uniforms.PROGRESS));
 
-        const lastLimits = vec2(inBetweenLimits.y.mul(0.725),1.1);
+        const lastLimits = vec2(inBetweenLimits.y.mul(0.775),1.1);
         const lastProgress = smoothstep(lastLimits.x, lastLimits.y, uniforms.PROGRESS).toVar()
         const inLastProgress = step(lastLimits.x,uniforms.PROGRESS).sub(step(lastLimits.y,uniforms.PROGRESS));
 
-   
         // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
         // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
         const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
@@ -385,13 +266,21 @@ export default function Refraction(){
         const aspectNode = float( aspectValue );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
 
-        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV)
-        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween)
+        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV).mul(0.15);
+        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween).mul(0.15);
         const circleVal = circle(shadertoyUV,inBetweenLimits);
-        const circleColor = mix(float(1),circleVal.y,inBetween).mul(2);
+        const colorGradientVal = colorGradient(shadertoyUV,colors,colorsPos,colorsCount);
+        const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
+        const innerColor = mix(float(0),circleVal.y.mul(colorGradientVal),inBetween).mul(1);
+
+        const colorGradientValBackground = colorGradient(shadertoyUV,colorsBackground,colorsPosBackground,colorsCountBackground);
+
+
+        const _grain = grainTextureEffect(shadertoyUV).mul(0.1)
+        const effectsColor = vec3(1).sub(baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5))).sub(circleVal.y.mul(1)).add(innerColor)
     
         
-        mat.colorNode = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.25)).add(baseLineColorBis)
+        mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
     }
 
 
