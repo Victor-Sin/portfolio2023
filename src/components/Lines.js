@@ -38,7 +38,7 @@ const randomHash = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
     ]
 } );
 
-const perlinNoise = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
+export const perlinNoise = /*#__PURE__*/ Fn( ( [ p_immutable ] ) => {
     
     const p = vec2( p_immutable ).toVar();
     const integerPart = vec2( floor( p ) ).toVar();

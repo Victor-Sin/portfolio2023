@@ -1,30 +1,59 @@
 import {useFBO, useTexture} from "@react-three/drei";
-import {useMemo, useRef} from "react";
+import {useMemo, useRef, useState, useEffect} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,time,min,array,exp, float,viewportSize,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor } from "./Lines";
+import {screenUV,screenCoordinate,time,uv,texture,array, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import { computeLineColor, perlinNoise } from "./Lines";
+import useDataTexture from "@/hooks/useDataTexture";
+import useScrollProgress from "@/hooks/useScrollProgress";
 
 export default function Refraction(){
-    const meshRef = useRef()
+    const materialRef = useRef()
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
-
-
+    const { dataTexture, shiftTexture } = useDataTexture({ size: 100 });
+    const { size } = useThree()
+    const aspect = size.width / size.height
+ 
+    
     const textureNoise = useTexture("/images/noise.png")
     textureNoise.wrapT = RepeatWrapping
     textureNoise.wrapS = RepeatWrapping
 
     const uniforms = useMemo(() => {
         return {
+            ASPECT: uniform(aspect),
             CAMERA_HEIGHT: uniform(10),
             CAMERA_TILT_ANGLE: uniform(0.97),
             PROGRESS: uniform(0),
             BACKGROUND_COLOR: uniform(new Color('#FDE7C5'))
         }
     },[])
+
+    function updateAspect(e){
+        if(e){
+            uniforms.ASPECT.value = e.target.innerWidth / e.target.innerHeight;
+        }else{
+            uniforms.ASPECT.value = size.width / size.height;
+        }
+    }
+  
+    // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
+    const { progress, velocity, speed } = useScrollProgress({
+        onUpdate: ({ progress }) => {
+            uniforms.PROGRESS.value = progress;
+        }
+    });
+
+    useEffect(() => {
+        updateAspect();
+        window.addEventListener("resize", updateAspect, { passive: true });
+        return () => {
+            window.removeEventListener("resize", updateAspect);
+        };
+    }, []);
 
     const props = useControls(
         {
@@ -41,9 +70,6 @@ export default function Refraction(){
     )
 
 
-    const { size } = useThree()
-    const aspect = size.width / size.height
-    
 
     const grainTextureEffect = Fn(([_uv]) => {
         return fract(sin(dot(_uv, vec2(12.9898, 78.233))).mul(43758.5453123))
@@ -238,9 +264,19 @@ export default function Refraction(){
         return finalColor.div(totalWeight)
     })
 
+    const curvedLines = Fn(() => {
+        const limit = float(20)
+
+        const lineA = step(limit, screenCoordinate.x)
+        const lineB = step(limit.add(1), screenCoordinate.x)
+
+        const finalLine = lineA.sub(lineB)
+        return vec2(finalLine,lineB)
+    })
 
 
-    function fragmentMat(mat, aspectValue){
+
+    function fragmentMat(mat){
         const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#2C4D3E'), new Color('#1b2632')]);
         const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0.5,0), new Vector2(0,0.5), new Vector2(0.5,0.5)])
         const colorsCount = int(4);
@@ -263,11 +299,13 @@ export default function Refraction(){
         // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
         const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
-        const aspectNode = float( aspectValue );
+        const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
 
-        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV).mul(0.15);
-        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween).mul(0.15);
+        const curvedLinesVal = curvedLines()
+
+        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV).mul(0.15).mul(curvedLinesVal.y);
+        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween).mul(0.15).mul(curvedLinesVal.y);
         const circleVal = circle(shadertoyUV,inBetweenLimits);
         const colorGradientVal = colorGradient(shadertoyUV,colors,colorsPos,colorsCount);
         const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
@@ -277,8 +315,8 @@ export default function Refraction(){
 
 
         const _grain = grainTextureEffect(shadertoyUV).mul(0.1)
-        const effectsColor = vec3(1).sub(baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5))).sub(circleVal.y.mul(1)).add(innerColor)
-    
+        const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5)).add(curvedLinesVal.x.mul(0.5))
+        const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
         
         mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
     }
@@ -286,12 +324,14 @@ export default function Refraction(){
 
     const material = useMemo(() => {
 
-        const mat = new THREE.MeshBasicNodeMaterial({
+        if(!materialRef.current){
+            materialRef.current = new THREE.MeshBasicNodeMaterial({
             side: DoubleSide,
-        })
-        fragmentMat(mat, aspect)
-        return mat;
-    },[aspect,])
+             })
+        }
+        fragmentMat(materialRef.current)
+        return materialRef.current;
+    },[])
 
     const planeZ = 1.5
     const { camera, viewport } = useThree()
@@ -302,6 +342,7 @@ export default function Refraction(){
         glassWallRef.current.visible = false;
         gl.setRenderTarget(mainRenderTarget);
         gl.render(scene, camera);
+        shiftTexture({x: Math.min(speed/2000,1), y: 0, z: 0, w: 0});
 
 
         // Pass the texture data to our shader material
@@ -312,10 +353,6 @@ export default function Refraction(){
 
     return (
         <group>
-            <mesh ref={meshRef}>
-                <sphereGeometry args={[1.5,32,32]}></sphereGeometry>
-                <meshStandardMaterial roughness={.5} metalness={0.5} color={"red"}></meshStandardMaterial>
-            </mesh>
             <mesh ref={glassWallRef} position={[0,0,planeZ]}>
                 <planeGeometry args={[width, height]} />
                 <primitive object={material} />
