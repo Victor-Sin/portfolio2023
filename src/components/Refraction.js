@@ -4,16 +4,19 @@ import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {useControls} from "leva";
-import {screenUV,screenCoordinate,time,uv,texture,array, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor, perlinNoise } from "./Lines";
-import useDataTexture from "@/hooks/useDataTexture";
+import {screenUV,screenCoordinate,time,screenSize,array,texture, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import { computeLineColor, perlinNoise, screenAspectUV } from "./Lines";
+import { gaussianBlur, premultipliedGaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+import useDataTextureRow from "@/hooks/useDataTextureRow";
 import useScrollProgress from "@/hooks/useScrollProgress";
+import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 
 export default function Refraction(){
     const materialRef = useRef()
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
-    const { dataTexture, shiftTexture } = useDataTexture({ size: 100 });
+    const { dataTexture, shiftTexture } = useDataTextureRow({ size: 100 });
+    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96 );
     const { size } = useThree()
     const aspect = size.width / size.height
  
@@ -28,7 +31,8 @@ export default function Refraction(){
             CAMERA_HEIGHT: uniform(10),
             CAMERA_TILT_ANGLE: uniform(0.97),
             PROGRESS: uniform(0),
-            BACKGROUND_COLOR: uniform(new Color('#FDE7C5'))
+            BACKGROUND_COLOR: uniform(new Color('#FDE7C5')),
+            MOUSE_POSITION: uniform(new Vector2(0,0))
         }
     },[])
 
@@ -275,7 +279,6 @@ export default function Refraction(){
     })
 
 
-
     function fragmentMat(mat){
         const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#2C4D3E'), new Color('#1b2632')]);
         const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0.5,0), new Vector2(0,0.5), new Vector2(0.5,0.5)])
@@ -301,26 +304,29 @@ export default function Refraction(){
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
+        const cursor = gaussianBlur(texture(dataTextureStatic, uvWebGPU),null,2)
+        const velocityCursor = cursor.rg
+        const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
+        const finalUVLines = shadertoyUV.add(velocityCursor.mul(.045))
 
         const curvedLinesVal = curvedLines()
 
-        const baseLineColor = computeLines(earlyProgress,inBetween,shadertoyUV).mul(0.15).mul(curvedLinesVal.y);
-        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,shadertoyUV,inBetween).mul(0.15).mul(curvedLinesVal.y);
-        const circleVal = circle(shadertoyUV,inBetweenLimits);
-        const colorGradientVal = colorGradient(shadertoyUV,colors,colorsPos,colorsCount);
+        const baseLineColor = computeLines(earlyProgress,inBetween,finalUVLines).mul(0.15).mul(curvedLinesVal.y);
+        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,finalUVLines,inBetween).mul(0.15).mul(curvedLinesVal.y);
+        const circleVal = circle(finalUVLines,inBetweenLimits);
+        const colorGradientVal = colorGradient(finalUV,colors,colorsPos,colorsCount);
         const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
         const innerColor = mix(float(0),circleVal.y.mul(colorGradientVal),inBetween).mul(1);
 
-        const colorGradientValBackground = colorGradient(shadertoyUV,colorsBackground,colorsPosBackground,colorsCountBackground);
+        const colorGradientValBackground = colorGradient(finalUV,colorsBackground,colorsPosBackground,colorsCountBackground);
 
 
-        const _grain = grainTextureEffect(shadertoyUV).mul(0.1)
+        const _grain = grainTextureEffect(finalUV).mul(0.1)
         const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5)).add(curvedLinesVal.x.mul(0.5))
         const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
         
         mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
     }
-
 
     const material = useMemo(() => {
 
@@ -338,7 +344,11 @@ export default function Refraction(){
     const { width, height } = viewport.getCurrentViewport(camera, [0,0,planeZ])
 
     useFrame((state) => {
-        const { gl, scene, camera } = state;
+        const { gl, scene, camera, pointer } = state;
+        uniforms.MOUSE_POSITION.value.x = pointer.x ;
+        uniforms.MOUSE_POSITION.value.y = pointer.y;
+        updateTexture({x: pointer.x, y: pointer.y})
+        
         glassWallRef.current.visible = false;
         gl.setRenderTarget(mainRenderTarget);
         gl.render(scene, camera);
@@ -353,7 +363,7 @@ export default function Refraction(){
 
     return (
         <group>
-            <mesh ref={glassWallRef} position={[0,0,planeZ]}>
+            <mesh ref={glassWallRef} position={[0,0,planeZ]} >
                 <planeGeometry args={[width, height]} />
                 <primitive object={material} />
             </mesh>

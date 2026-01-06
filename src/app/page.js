@@ -7,7 +7,7 @@ import {Stats} from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import {WebGPURenderer} from "three/webgpu";
 import Refraction from "@/components/Refraction";
-import useDataTexture from "@/hooks/useDataTexture";
+import useDataTexture from "@/hooks/useDataTextureRow";
 
 export default function Home() {
   const {dataTexture, shiftTexture} = useDataTexture({size: 1000});
@@ -23,7 +23,7 @@ export default function Home() {
             await renderer.init()
             return renderer
           }}>
-            <Stats></Stats>
+            <Stats />
             <Refraction />
         </Canvas>
         <div className={styles.test} >

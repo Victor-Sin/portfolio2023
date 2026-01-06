@@ -2,7 +2,7 @@ import {Plane, useTexture} from "@react-three/drei";
 import {useMemo, useRef} from "react";
 import * as THREE from "three";
 
-export default function useDataTexture({size}){
+export default function useDataTextureRow({size}){
 
     const dataTexture = useMemo(() => {
         return new THREE.DataTexture(
