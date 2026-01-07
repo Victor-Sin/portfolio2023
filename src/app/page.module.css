@@ -1,8 +1,138 @@
-.test {
+.container {
     position: relative;
-    z-index: 1;
-    width: 100svw;
-    height: 200svh;
-    opacity: 0.15;
+    width: calc(100svw - 1.25rem);
+    height: 1500svh;
+    font-family: var(--font-courier-new);
+    font-size: 15px;
+    margin-left: 1.25rem;
     pointer-events: none;
+}
+
+
+.home{
+    height: 100svh;
+    width: 100%;
+    position: relative;
+    font-weight: bold;
+    color: #423f28;
+    & .scrollIndicator {
+        position: absolute;
+        top: 1.5em;
+        left: 1em;
+
+    }
+    & .middleLine {
+        position: absolute;
+        top: 50%;
+        left: -1.25rem;
+        height: 1px;
+        width: 100svw;
+        border: none;
+        background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+    }
+    & h1 {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        font-family: var(--font-parasitype);
+        font-size: clamp(80px, 7.5svw, 125px);
+        font-weight: 500;
+        text-wrap: nowrap;
+        transform: translate(-50%, -50%);
+    }
+    & .pressure {
+        position: absolute;
+        top: calc(50% + 1em);
+        left: 10svw;
+        font-size: 1em;
+        font-weight: bold;
+    }
+    & .date {
+        position: absolute;
+        top: calc(50% + 1em);
+        right: 2.5em;
+        font-size: 1em;
+        font-weight: bold;
+    }
+}
+
+.about{
+    position: relative;
+    width: 100%;
+    height: 100svh;
+    margin-top: 15svh;
+    & h2 {
+        font-size: 15px;
+        font-weight: bold;
+        text-align: center;
+        width: 70%;
+        margin: 0 auto;
+    }
+    & .middleLine {
+        position: absolute;
+        top: 4em;
+        left: -1.25rem;
+        height: 1px;
+        width: 100svw;
+        border: none;
+        background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+    }
+    & nav {
+        position: relative;
+        margin-top: 4em;
+        margin-left: 2.5em;
+        display: flex;
+        justify-content: space-between;
+        width: calc(100% - 2.5em * 2);
+        & h3 {
+            font-size: 1em;
+            font-weight: bold;
+            margin: 0;
+            background : white;
+            pointer-events: all;
+            padding: 0em 0.25em;
+        }
+        & ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 4em;
+            margin: 0 auto;
+            & li {
+                & p {
+                    font-size: 1em;
+                    pointer-events: all;
+                    font-weight: bold;
+                }
+                & a {
+                    position: relative;
+                    font-size: 1em;
+                    pointer-events: all;
+                    &::before {
+                        content: "[";
+                        position: absolute;
+                        top: 0;
+                        left: -1.25em;
+                    }
+                    &::after {
+                        content: "]";
+                        position: absolute;
+                        top: 0;
+                        right: -1.25em;
+                    }
+                    &:hover {
+                        &::before {
+                            left: -1em;
+                        }
+                        &::after {
+                            right: -1em;
+                        }
+                    }
+                    &.selected {
+                        font-weight: bold;
+                    }
+                }
+            }
+        }
+    }
 }

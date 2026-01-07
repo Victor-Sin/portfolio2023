@@ -1,38 +1,51 @@
 "use client"
-import Image from "next/image";
 import styles from "@/app/page.module.css";
 import React from 'react';
-import {Canvas} from "@react-three/fiber";
-import {Stats} from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
-import {WebGPURenderer} from "three/webgpu";
-import Refraction from "@/components/Refraction";
-import useDataTexture from "@/hooks/useDataTextureRow";
-
 export default function Home() {
-  const {dataTexture, shiftTexture} = useDataTexture({size: 1000});
 
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Canvas 
-        style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh",background: "black"}}
-           gl={async (props) => {
-            const renderer = new WebGPURenderer(props)
-            await renderer.init()
-            return renderer
-          }}>
-            <Stats />
-            <Refraction />
-        </Canvas>
-        <div className={styles.test} >
-        </div>
-        <div className={styles.test}>
-          <p>Hello</p>
-        </div>
-        <div className={styles.test}>
-          <p>Hello</p>
+        <div className={styles.container} >
+          <section className={styles.home} >
+            <div className={styles.scrollIndicator}>(X)  [ SCROLL ]</div>
+            <span className={styles.middleLine}></span>
+            <h1>CREATIVE DEV</h1>
+            <p className={styles.pressure}>
+              (+) 221 BAR - 245°
+            </p>
+            <p className={styles.date}>
+              SUN12:00:00
+            </p>
+          </section>
+          <section className={styles.about} >
+            <h2>TO CREATE TAILORED, MEANINGFUL EXPERIENCES. Deep brand INSIGHTS CREATE A UNIQUELY POWERFUL THAT NO ONE HAS ATTEMPTED, WE DELVE INTO PHILOSOPHY TO CREATE TAILORED, MEANINGFUL EXPERIENCES, DEEP BRAND INSIGHTS CREATE A UNIQUELY POWERFUL </h2>
+            <span className={styles.middleLine}></span>
+            <nav>
+              <h3>VICTOR SIN</h3>
+              <ul>
+                <li>
+                  <p>(X)</p>
+                </li>
+                <li>
+                  <a href="#">WORK</a>
+                </li>
+                <li>
+                  <a href="#">CONTACT</a>
+                </li>
+                <li>
+                  <a href="#">ABOUT</a>
+                </li>
+                <li>
+                  <a href="#" className={styles.selected}>HOME</a>
+                </li>
+              </ul>
+              <p className={styles.date}>
+                SUN12:00:00
+              </p>
+            </nav>
+          </section>
         </div>
       </main>
     </div>

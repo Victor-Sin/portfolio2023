@@ -1,3 +1,5 @@
+"use client"
+
 import {useFBO, useTexture} from "@react-three/drei";
 import {useMemo, useRef, useState, useEffect} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
@@ -32,7 +34,8 @@ export default function Refraction(){
             CAMERA_TILT_ANGLE: uniform(0.97),
             PROGRESS: uniform(0),
             BACKGROUND_COLOR: uniform(new Color('#FDE7C5')),
-            MOUSE_POSITION: uniform(new Vector2(0,0))
+            MOUSE_POSITION: uniform(new Vector2(0,0)),
+            VELOCITY: uniform(0)
         }
     },[])
 
@@ -45,11 +48,12 @@ export default function Refraction(){
     }
   
     // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
-    const { progress, velocity, speed } = useScrollProgress({
-        onUpdate: ({ progress }) => {
-            uniforms.PROGRESS.value = progress;
+    const { progress, velocity, speed, update } = useScrollProgress({
+        onUpdate: ({ progress,velocity }) => {
+                uniforms.PROGRESS.value = progress;
+                console.log(uniforms.VELOCITY.value)
         }
-    });
+    },0, true);
 
     useEffect(() => {
         updateAspect();
@@ -58,20 +62,6 @@ export default function Refraction(){
             window.removeEventListener("resize", updateAspect);
         };
     }, []);
-
-    const props = useControls(
-        {
-            CAMERA_HEIGHT: { value: uniforms.CAMERA_HEIGHT.value, min: -20, max: 20, onChange: (value) => {
-                uniforms.CAMERA_HEIGHT.value = value
-            }},
-            CAMERA_TILT_ANGLE: { value: uniforms.CAMERA_TILT_ANGLE.value, min: -2, max: 2, onChange: (value) => {
-                uniforms.CAMERA_TILT_ANGLE.value = value
-            } },
-            PROGRESS: { value: uniforms.PROGRESS.value, min: 0, max: 1,step: 0.001, onChange: (value) => {
-                uniforms.PROGRESS.value = value
-            } }
-        }
-    )
 
 
 
@@ -306,8 +296,12 @@ export default function Refraction(){
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
         const cursor = gaussianBlur(texture(dataTextureStatic, uvWebGPU),null,2)
         const velocityCursor = cursor.rg
+
+        const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );
+        const velocityInfluence = vec2(0,float(1).sub(distance(vec2(0,0),distordUv.mul(0.5)).mul(1.5)).mul(uniforms.VELOCITY))
+
         const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
-        const finalUVLines = shadertoyUV.add(velocityCursor.mul(.045))
+        const finalUVLines = shadertoyUV.add(velocityCursor.mul(.045)).add(velocityInfluence.mul(0.0001))
 
         const curvedLinesVal = curvedLines()
 
@@ -326,6 +320,7 @@ export default function Refraction(){
         const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
         
         mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
+   
     }
 
     const material = useMemo(() => {
@@ -345,6 +340,7 @@ export default function Refraction(){
 
     useFrame((state) => {
         const { gl, scene, camera, pointer } = state;
+        update()
         uniforms.MOUSE_POSITION.value.x = pointer.x ;
         uniforms.MOUSE_POSITION.value.y = pointer.y;
         updateTexture({x: pointer.x, y: pointer.y})
