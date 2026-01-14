@@ -5,10 +5,9 @@ import {useMemo, useRef, useState, useEffect} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
-import {useControls} from "leva";
-import {screenUV,screenCoordinate,time,screenSize,array,texture, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor, perlinNoise, screenAspectUV } from "./Lines";
-import { gaussianBlur, premultipliedGaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+import {screenUV,screenCoordinate,time,array,texture, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import { computeLineColor } from "./Lines";
+import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureRow from "@/hooks/useDataTextureRow";
 import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
@@ -18,7 +17,7 @@ export default function Refraction(){
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
     const { dataTexture, shiftTexture } = useDataTextureRow({ size: 100 });
-    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96 );
+    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96, 0, false );
     const { size } = useThree()
     const aspect = size.width / size.height
  
@@ -87,7 +86,7 @@ export default function Refraction(){
         // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
         const progress = earlyProgress;
 
-        const depthKeyframes = array([float(-2.0), float(2.0), float(10.0), float(20.0), float(15.0), float(20.0)]);
+        const depthKeyframes = array([float(-2.0), float(3.0), float(8.0), float(15.0), float(10.0), float(20.0)]);
         const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
         const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
         const numberBreakpoints = int(6);
@@ -150,7 +149,7 @@ export default function Refraction(){
         const circleShadow = distance(vec2(0,0),_uv).toVar();
         const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y, uniforms.PROGRESS).toVar()
 
-        const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(1.0)]);
+        const progressBreakpoints = array([float(0.0), float(0.25), float(0.75), float(1.0)]);
         const valuesProgress = array([float(0), float(1.0), float(1.0), float(0.0)]);
 
         const numberBreakpoints = int(4);
@@ -179,7 +178,14 @@ export default function Refraction(){
         const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween);
         const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
         const rayOrigin = vec3( float( 0.), 10, cameraAnim.x).toVar();
-        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween, float(0) ) ).mul(0.5)
+        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween, float(0) ) ).toVar()
+
+        If(inBetween.greaterThan(0), () => {
+            baseLineColor.mulAssign(0.25)
+        }).Else(() => {
+            baseLineColor.mulAssign(0.5)
+
+        })
     
         return baseLineColor;
     })
@@ -190,7 +196,7 @@ export default function Refraction(){
         If(inLastProgress.greaterThan(0.0), () => {
             const cameraAnimBis = cameraAnimationBis(lastProgress,inLastProgress)
             const lineLimitTopBis = float(-20);
-            const lineLimitBottomBis = float(60);
+            const lineLimitBottomBis = float(50);
             const rayOriginBis = vec3( float( 0.), 10, cameraAnimBis.x).toVar();
             const cameraAnglesBis = vec3( float( 0.0 ), cameraAnimBis.y, float( 0.0 ) ).toVar();
             baseLineColorBis.assign(vec4( computeLineColor( shadertoyUV, cameraAnglesBis, rayOriginBis, lineLimitTopBis, lineLimitBottomBis, inBetween, float(1) ) ).mul(0.75));
@@ -270,18 +276,18 @@ export default function Refraction(){
 
 
     function fragmentMat(mat){
-        const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#2C4D3E'), new Color('#1b2632')]);
-        const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0.5,0), new Vector2(0,0.5), new Vector2(0.5,0.5)])
+        const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#3B4D3B'), new Color('#315261')]);
+        const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0,0), new Vector2(0,0.25), new Vector2(0.5,0.5)])
         const colorsCount = int(4);
 
         const colorsBackground = uniformArray([new Color('#FDE7C5'), new Color('#AAA97F'), new Color('#E6D3A4')]);
         const colorsPosBackground = uniformArray([new Vector2(0,-1), new Vector2(0.5,0),new Vector2(0,0)]);
         const colorsCountBackground = int(3);
 
-        const earlyProgressLimits = vec2(0,0.25);
+        const earlyProgressLimits = vec2(0,0.26);
         const earlyProgress = smoothstep(earlyProgressLimits.x, earlyProgressLimits.y, uniforms.PROGRESS).toVar()
 
-        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.95),.8);
+        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.75),.8);
         const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y.mul(0.95),uniforms.PROGRESS));
 
         const lastLimits = vec2(inBetweenLimits.y.mul(0.775),1.1);
@@ -316,7 +322,7 @@ export default function Refraction(){
 
 
         const _grain = grainTextureEffect(finalUV).mul(0.1)
-        const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5)).add(curvedLinesVal.x.mul(0.5))
+        const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5))
         const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
         
         mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
@@ -334,7 +340,7 @@ export default function Refraction(){
         return materialRef.current;
     },[])
 
-    const planeZ = 1.5
+    const planeZ = 1
     const { camera, viewport } = useThree()
     const { width, height } = viewport.getCurrentViewport(camera, [0,0,planeZ])
 

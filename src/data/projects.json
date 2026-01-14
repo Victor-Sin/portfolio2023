@@ -1,0 +1,58 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "title": "CALENDAR KEMPINSKI 2025",
+      "date": "DECEMBER 2023",
+      "client": "SCHOOL PROJECT",
+      "type": "WEBSITE",
+      "link": "https://example.com/project1",
+      "imageUrl": "/images/p1.jpg"
+    },
+    {
+      "id": 2,
+      "title": "AURORA DESIGN STUDIO",
+      "date": "FEBRUARY 2024",
+      "client": "AURORA CREATIVE",
+      "type": "BRANDING",
+      "link": "https://example.com/project2",
+      "imageUrl": "/images/p2.jpg"
+    },
+    {
+      "id": 3,
+      "title": "NEON CITY APP",
+      "date": "MAY 2024",
+      "client": "TECH STARTUP",
+      "type": "MOBILE APP",
+      "link": "https://example.com/project3",
+      "imageUrl": "/images/p3.jpg"
+    },
+    {
+      "id": 4,
+      "title": "VOYAGE E-COMMERCE",
+      "date": "AUGUST 2024",
+      "client": "VOYAGE TRAVEL",
+      "type": "WEBSITE",
+      "link": "https://example.com/project4",
+      "imageUrl": "/images/p4.jpg"
+    },
+    {
+      "id": 5,
+      "title": "METRO EXHIBITION 2024",
+      "date": "OCTOBER 2024",
+      "client": "MUSEUM PARTNERSHIP",
+      "type": "INSTALLATION",
+      "link": "https://example.com/project5",
+      "imageUrl": "/images/p5.jpg"
+    },
+    {
+      "id": 6,
+      "title": "ZENITH PORTFOLIO",
+      "date": "NOVEMBER 2024",
+      "client": "FREELANCE",
+      "type": "WEBSITE",
+      "link": "https://example.com/project6",
+      "imageUrl": "/images/p6.jpg"
+    }
+  ]
+}

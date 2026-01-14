@@ -7,6 +7,7 @@ import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
 import "@/app/globals.css";
+import ProjectImage from "@/components/ProjectImage";
 
 const parasitype = localFont({
   variable: "--font-parasitype",
@@ -92,7 +93,9 @@ export default function RootLayout({ children }) {
             return renderer
           }}>
             <Refraction />
-        </Canvas>
+             <ProjectImage></ProjectImage>
+       </Canvas>
+        <span className="lateralBar"></span>  
         {children}
       </body>
     </html>

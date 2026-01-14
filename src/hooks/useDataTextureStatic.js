@@ -4,8 +4,10 @@ import { useThree } from "@react-three/fiber";
 
 export default function useDataTextureStatic(
     width, 
-    decayFactor = 0.975,
+    aspectRatio = 0,
+    uvClassic = false,
     radius = 0.075,
+    decayFactor = 0.975,
     strength = 0.5,
     influenceGain = .75,
     influenceGamma = 1
@@ -30,7 +32,15 @@ export default function useDataTextureStatic(
     }
 
     const dataTexture = useMemo(() => {
-        updateCanvasBounds()
+        if(aspectRatio == 0){
+            updateCanvasBounds()
+        }
+        else{
+            aspectRef.current = aspectRatio;
+            heightRef.current = width*aspectRef.current
+            console.log(aspectRatio,heightRef.current)
+
+        }
         const data = new Float32Array(heightRef.current * width * 4);
 
         for (let i = 0; i < width * heightRef.current; i++) {
@@ -54,8 +64,11 @@ export default function useDataTextureStatic(
     },[width])
 
     useEffect(() => {
-        updateCanvasBounds()
-        window.addEventListener("resize", updateCanvasBounds, { passive: true });
+        if(aspectRatio == 0){
+            updateCanvasBounds()
+            window.addEventListener("resize", updateCanvasBounds, { passive: true });
+        }
+      
         return () => {
             window.removeEventListener("resize", updateCanvasBounds);
         };
@@ -64,7 +77,7 @@ export default function useDataTextureStatic(
     function updateTexture(mousePosition){
         if(dataTexture ){
             let bounds = canvasBoundsRef.current
-            if (!bounds) {
+            if (!bounds && aspectRatio == 0) {
               updateCanvasBounds()
               bounds = canvasBoundsRef.current
               if (!bounds) {
@@ -117,8 +130,9 @@ export default function useDataTextureStatic(
         // Map pointer into grid coordinates
         const mouseRadiusX = width * radius
         const mouseRadiusY = mouseRadiusX * aspectRef.current
-        const cellX = (1 + pointerRef.current.x) * 0.5 * width 
-        const cellY = (1 + pointerRef.current.y) * 0.5 * heightRef.current 
+
+        const cellX =  uvClassic ?  (pointerRef.current.x) * width  : (1 + pointerRef.current.x) * 0.5 * width 
+        const cellY =  uvClassic ? (pointerRef.current.y) * heightRef.current  : (1 + pointerRef.current.y) * 0.5 * heightRef.current 
         
         // Decay existing values (RGB channels only)
         for (let i = 0; i < data.length; i += 4) {
