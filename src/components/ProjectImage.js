@@ -5,23 +5,30 @@ import {useMemo, useRef, useEffect} from "react";
 import {DoubleSide, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
-import {uv,screenUV,screenCoordinate,time,array,texture, float,positionGeometry,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor } from "./Lines";
+import {uv,screenUV,screenCoordinate,time,Switch,texture, float,distance,log,rotate,EmptyTexture,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import useDataTextureRow from "@/hooks/useDataTextureRow";
-import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
+import { useProjectCount, useProjectHomeActive } from "@/contexts/ProjectContext";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 
 export default function ProjectImage(){
     const materialRef = useRef()
     const glassWallRef = useRef()
     const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96,4/3,true );
+    const count = useProjectCount()
+    const projectHomeActive = useProjectHomeActive()
 
     const { size } = useThree()
     const aspect = size.width / size.height
-    const mapTexture = useTexture("/images/p1.jpg")
-    const mapTexture2 = useTexture("/images/p2.jpg")
-
+    const [proj1, proj2, proj3, proj4, proj5, proj6] = useTexture([
+        "/images/p1.jpg",
+        "/images/p2.jpg",
+        "/images/p3.jpg",
+        "/images/p4.jpg",
+        "/images/p5.jpg",
+        "/images/p6.jpg",
+    ])
     
     const textureNoise = useTexture("/images/noise.png")
     textureNoise.wrapT = RepeatWrapping
@@ -35,9 +42,23 @@ export default function ProjectImage(){
             PROGRESS: uniform(0),
             BACKGROUND_COLOR: uniform(new Color('#FDE7C5')),
             MOUSE_POSITION: uniform(new Vector2(0,0)),
-            VELOCITY: uniform(0)
+            VELOCITY: uniform(0),
+            COUNT: uniform(count),
+            OPACITY: uniform(0)
         }
     },[])
+
+    useEffect(() => {
+        uniforms.COUNT.value = count
+    },[count])
+    
+    useGSAP(() => {
+       gsap.to(uniforms.OPACITY, {
+        value: projectHomeActive ? 1 : 0,
+        duration: .5,
+        ease: "power2.out"
+       })
+    },[projectHomeActive])
 
     function updateAspect(e){
         if(e){
@@ -46,13 +67,7 @@ export default function ProjectImage(){
             uniforms.ASPECT.value = size.width / size.height;
         }
     }
-  
-    // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
-    const { progress, velocity, speed, update } = useScrollProgress({
-        onUpdate: ({ progress,velocity }) => {
-                uniforms.PROGRESS.value = progress;
-        }
-    },0, true);
+
 
     useEffect(() => {
         updateAspect();
@@ -79,11 +94,14 @@ export default function ProjectImage(){
      * @returns {vec4} The chromatic aberration processed color
      */
     const chromaticAberrationEffect = Fn((props) => {
-        const { input,inputUV2, inputUV = uv , strength = 0.01, radial = 0.5, direction = vec2(0, 0) } = props || {}
+        const {inputUV2, inputUV = uv , strength = 0.01, radial = 0.5, direction = vec2(0, 0) } = props || {}
     
         // We need to use the built-in uv() here to work as a post-processing effect
         const _uv = inputUV.toVar()
-    
+
+
+
+
         const _strength = float(strength)
         const _radial = float(radial)
         const _direction = direction.toVar()
@@ -104,14 +122,39 @@ export default function ProjectImage(){
         const gOffset = _uv.toVar()
         const bOffset = _uv.sub(offset.mul(1.0)).toVar()
 
+        const returnVec4 = vec4(0,0,0,0).toVar()
+
     
         // Sample input texture at different offsets for each channel
-        const rSample = texture(input,rOffset)
-        const gSample = texture(input,gOffset)
-        const bSample =texture(input,bOffset)
-        const colorA = vec4(rSample.r, gSample.g, bSample.b, 1)
-        // Combine RGB channels with original alpha
-        return  colorA
+        If(uniforms.COUNT.equal(1), () => {
+            returnVec4.assign(vec4(texture(proj1,rOffset).r, texture(proj1,gOffset).g, texture(proj1,bOffset).b, 1).toVar())
+        })
+        .ElseIf(uniforms.COUNT.equal(2), () => {
+            returnVec4.assign(vec4(texture(proj2,rOffset).r, texture(proj2,gOffset).g, texture(proj2,bOffset).b, 1).toVar())
+        })
+        .ElseIf(uniforms.COUNT.equal(3), () => {
+            returnVec4.assign(vec4(texture(proj3,rOffset).r, texture(proj3,gOffset).g, texture(proj3,bOffset).b, 1).toVar())
+        })
+        .ElseIf(uniforms.COUNT.equal(4), () => {
+            returnVec4.assign(vec4(texture(proj4,rOffset).r, texture(proj4,gOffset).g, texture(proj4,bOffset).b, 1).toVar())
+        })
+        .ElseIf(uniforms.COUNT.equal(5), () => {
+            returnVec4.assign(vec4(texture(proj5,rOffset).r, texture(proj5,gOffset).g, texture(proj5,bOffset).b, 1).toVar())
+        })
+        .ElseIf(uniforms.COUNT.equal(6), () => {
+            returnVec4.assign(vec4(texture(proj6,rOffset).r, texture(proj6,gOffset).g, texture(proj6,bOffset).b, 1).toVar())
+        })
+        .Else(() => {
+            returnVec4.assign(vec4(texture(proj1,rOffset).r, texture(proj1,gOffset).g, texture(proj1,bOffset).b, 1).toVar())
+        })  
+
+        return returnVec4
+        
+
+    
+
+
+
     })
 
     const uvFlowField = Fn(([uv_immutable]) => {
@@ -140,6 +183,10 @@ export default function ProjectImage(){
 
         return uvR
     })
+
+    const getTextureMap = Fn(() => {
+      return proj1
+    })
     
 
     function fragmentMat(mat){
@@ -150,11 +197,21 @@ export default function ProjectImage(){
 
         const _velocity = texture(dataTextureStatic,uv()).gr
         const flowflied = uvFlowField(uv())
+        const flowfliedBis = uvFlowField(shadertoyUV)
+
+        const strengthbis =  distance(uv(), vec2(0.5)).mul(2);
+        const strength = distance(flowflied.mul(10), vec2(0.5)).mul(3);
+
         const _grain = grainTextureEffect(flowflied).mul(0.05)
 
         const uvTest = flowflied.mul(0.15)
 
-        mat.colorNode = gaussianBlur(chromaticAberrationEffect({input:mapTexture,inputUV2:flowflied,inputUV:uv(), strength: 0.05}),null,10).add(_grain)
+        // Récupérer l'alpha de la texture originale
+        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv(), strength: 0.05}),null,10)
+        
+        // Créer le vec4 final avec l'alpha de la texture originale
+        const finalColor = vec4(blurredColor.rgb.add(_grain), uniforms.OPACITY)
+        mat.colorNode = finalColor
     }
 
     const material = useMemo(() => {
@@ -162,11 +219,14 @@ export default function ProjectImage(){
         if(!materialRef.current){
             materialRef.current = new THREE.MeshBasicNodeMaterial({
             side: DoubleSide,
+            alpha: true,
+            transparent: true,
+            depthWrite: false,
              })
         }
         fragmentMat(materialRef.current)
         return materialRef.current;
-    },[])
+    },[count])
 
     const planeZ = 1.5
     const scale = 3;

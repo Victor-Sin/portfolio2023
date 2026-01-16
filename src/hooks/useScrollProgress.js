@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 
 // Minimal hook: progress (0..1), velocity (px/s signed), speed (px/s abs)
 // Extras: optional onUpdate callback and SSR/no-scroll fallbackProgress
 export default function useScrollProgress({ onUpdate, fallbackProgress = 0, scrollEventActive = true } = {}) {
-    const [progress, setProgress] = useState(fallbackProgress);
-    const [velocity, setVelocity] = useState(0);
-    
-    const [speed, setSpeed] = useState(0);
+    // Use refs to store values without triggering rerenders
+    const progressRef = useRef(fallbackProgress);
+    const velocityRef = useRef(0);
+    const speedRef = useRef(0);
 
     const rafIdRef = useRef(null);
     const lastYRef = useRef(0);
@@ -17,15 +17,15 @@ export default function useScrollProgress({ onUpdate, fallbackProgress = 0, scro
         const max = Math.max(0, doc.scrollHeight - window.innerHeight);
         const y = window.scrollY || 0;
         const p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
-        setProgress(p);
+        progressRef.current = p;
 
         const now = performance.now();
         if (lastTRef.current) {
             const dt = (now - lastTRef.current) / 1000;
             if (dt > 0) {
                 const v = (y - lastYRef.current) / dt;
-                setVelocity(v);
-                setSpeed(Math.abs(v));
+                velocityRef.current = v;
+                speedRef.current = Math.abs(v);
                 if (typeof onUpdate === "function") {
                     onUpdate({ progress: p, velocity: v, speed: Math.abs(v) });
                 }
@@ -70,6 +70,16 @@ export default function useScrollProgress({ onUpdate, fallbackProgress = 0, scro
         };
     }, [onUpdate, fallbackProgress]);
 
-    return { progress, velocity, speed,update };
+    // Return a stable object reference to avoid rerenders
+    // Values are stored in refs and accessed via getters
+    // update is memoized separately to keep the object stable
+    const stableReturn = useMemo(() => ({
+        get progress() { return progressRef.current; },
+        get velocity() { return velocityRef.current; },
+        get speed() { return speedRef.current; },
+        update
+    }), [update]);
+    
+    return stableReturn;
 }
 

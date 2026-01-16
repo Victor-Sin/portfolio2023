@@ -1,7 +1,7 @@
 "use client"
 
 import {useFBO, useTexture} from "@react-three/drei";
-import {useMemo, useRef, useState, useEffect} from "react";
+import {useMemo, useRef, useState, useEffect, useCallback} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
@@ -45,13 +45,15 @@ export default function Refraction(){
             uniforms.ASPECT.value = size.width / size.height;
         }
     }
+
+    const onUpdateCallback = useCallback(({ progress,velocity }) => {
+        uniforms.PROGRESS.value = progress;
+        uniforms.VELOCITY.value = velocity;
+    }, [uniforms]);
   
     // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
     const { progress, velocity, speed, update } = useScrollProgress({
-        onUpdate: ({ progress,velocity }) => {
-                uniforms.PROGRESS.value = progress;
-                console.log(uniforms.VELOCITY.value)
-        }
+        onUpdate: onUpdateCallback
     },0, true);
 
     useEffect(() => {
@@ -147,7 +149,7 @@ export default function Refraction(){
         
         const circle = distance(vec2(0,0),shadertoyUV).toVar();
         const circleShadow = distance(vec2(0,0),_uv).toVar();
-        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y, uniforms.PROGRESS).toVar()
+        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y.mul(0.95), uniforms.PROGRESS).toVar()
 
         const progressBreakpoints = array([float(0.0), float(0.25), float(0.75), float(1.0)]);
         const valuesProgress = array([float(0), float(1.0), float(1.0), float(0.0)]);
@@ -174,7 +176,7 @@ export default function Refraction(){
 
     const computeLines = Fn(([earlyProgress,inBetween,shadertoyUV]) => {
         const cameraAnim = cameraAnimation(earlyProgress,inBetween)
-        const lineLimitTop = mix(float( 0.0 ),float( -100.0 ),inBetween)
+        const lineLimitTop = mix(float( 0.0 ),float( -150.0 ),inBetween)
         const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween);
         const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
         const rayOrigin = vec3( float( 0.), 10, cameraAnim.x).toVar();
@@ -195,7 +197,7 @@ export default function Refraction(){
     
         If(inLastProgress.greaterThan(0.0), () => {
             const cameraAnimBis = cameraAnimationBis(lastProgress,inLastProgress)
-            const lineLimitTopBis = float(-20);
+            const lineLimitTopBis = float(-0);
             const lineLimitBottomBis = float(50);
             const rayOriginBis = vec3( float( 0.), 10, cameraAnimBis.x).toVar();
             const cameraAnglesBis = vec3( float( 0.0 ), cameraAnimBis.y, float( 0.0 ) ).toVar();
@@ -274,6 +276,34 @@ export default function Refraction(){
         return vec2(finalLine,lineB)
     })
 
+    
+    const uvFlowField = Fn(([uv_immutable]) => {
+
+        const _uv = vec2(uv_immutable).toVar();
+        const uv0 = vec2(uv_immutable).toVar();
+        const radius = length(uv0)
+        const center = oneMinus(radius)
+
+        const amp1 = float(.21)
+        const amp2 = float(.55)
+        const _d = float(0.8)
+        Loop({ start: 1, end: 2, type: 'float', condition: '<=' }, ({ i }) => {
+            const strength = _d.mul(center).div(i)
+           
+            _uv.x.addAssign(strength.mul(sin(_time.add(_uv.y.mul(i)))).mul(amp1))
+            _uv.y.addAssign(strength.mul(cos(_time.add(_uv.x.mul(i)))).mul(amp2))
+          })
+
+        const _time = time.mul(0.25);
+
+        // Domain warping and rotation - this is a placeholder for now
+        const uvR = _uv
+        const angle = log(length(uvR)).mul(0.15)
+        uvR.assign(rotate(uvR, angle))
+
+        return uvR
+    })
+
 
     function fragmentMat(mat){
         const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#3B4D3B'), new Color('#315261')]);
@@ -307,13 +337,14 @@ export default function Refraction(){
         const velocityInfluence = vec2(0,float(1).sub(distance(vec2(0,0),distordUv.mul(0.5)).mul(1.5)).mul(uniforms.VELOCITY))
 
         const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
-        const finalUVLines = shadertoyUV.add(velocityCursor.mul(.045)).add(velocityInfluence.mul(0.0001))
+        const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.15))
+        const circleUV = uvFlowField(shadertoyUV).add(velocityCursor.mul(.15))
 
         const curvedLinesVal = curvedLines()
 
         const baseLineColor = computeLines(earlyProgress,inBetween,finalUVLines).mul(0.15).mul(curvedLinesVal.y);
         const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,finalUVLines,inBetween).mul(0.15).mul(curvedLinesVal.y);
-        const circleVal = circle(finalUVLines,inBetweenLimits);
+        const circleVal = circle(circleUV,inBetweenLimits);
         const colorGradientVal = colorGradient(finalUV,colors,colorsPos,colorsCount);
         const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
         const innerColor = mix(float(0),circleVal.y.mul(colorGradientVal),inBetween).mul(1);
@@ -340,6 +371,8 @@ export default function Refraction(){
         return materialRef.current;
     },[])
 
+    console.log("rerender")
+
     const planeZ = 1
     const { camera, viewport } = useThree()
     const { width, height } = viewport.getCurrentViewport(camera, [0,0,planeZ])
@@ -354,7 +387,6 @@ export default function Refraction(){
         glassWallRef.current.visible = false;
         gl.setRenderTarget(mainRenderTarget);
         gl.render(scene, camera);
-        shiftTexture({x: Math.min(speed/2000,1), y: 0, z: 0, w: 0});
 
 
         // Pass the texture data to our shader material

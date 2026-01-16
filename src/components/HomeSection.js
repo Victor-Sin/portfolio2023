@@ -109,8 +109,8 @@ export default function HomeSection() {
       <div className={styles.pres}>
         <ul>
           <li>(+) CONTACT</li>
-          <li>
-            <ul>
+          <li >
+            <ul className={styles.contact}>
               <li>- SIN.VICTOR@OUTLOOK.FR</li>
               <li>- <a href="https://www.linkedin.com/in/victor-sin-/">LinkedIn</a></li>
               <li>- <a href="https://www.twitter.com/victor_sin_/">Twitter</a></li>

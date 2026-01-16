@@ -5,16 +5,21 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import styles from '@/app/page.module.css';
 import projectsData from '@/data/projects.json';
+import { useProjectCount, useProjectSetCount, useProjectSetHomeActive } from '@/contexts/ProjectContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Marker() {
-  const [count,setCount] = useState(0)
+  const count = useProjectCount()
+  const setCount = useProjectSetCount()
+  const setProjectHomeActive = useProjectSetHomeActive()
   const prevCountRef = useRef(0);
   const animationKeyRef = useRef(0);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const infosRef = useRef(null);
   const buttonRef = useRef(null);
+
+  const tl = useRef(null);
   
   // Trouver le projet actuel basé sur le count
   const currentProject = useMemo(() => {
@@ -47,7 +52,7 @@ export default function Marker() {
     gsap.timeline({
       scrollTrigger: {
         trigger: `.${styles.projets}`,
-        toggleActions: 'play none none none',
+        toggleActions: 'play reverse play reverse',
         start: 'top 15%',
         end: '575% bottom',
         pin: true,
@@ -55,28 +60,17 @@ export default function Marker() {
     })
    
 
-    gsap.to(`.${styles.nameProject}`, {
-      scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play none reverse none',
-        start: '35% bottom',
-        end: '35% bottom',
-      },
+    tl.current = gsap.timeline({ scrollTrigger: {
+      trigger: `.${styles.container}`,
+      toggleActions: 'play reverse play reverse',
+      start: '40% bottom',
+      end: '65% bottom',
+    }}).to(`.${styles.nameProject}`, {
       opacity: 1,
-    })
-
-    gsap.to(`.${styles.marker1}`, {
-      scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play none reverse none',
-        start: '35% bottom',
-        end: '35% bottom',
-
-      },
+    }).to(`.${styles.projets}`, {
       opacity: 1,
-      width: '100px',
-      height: '100px',
-    })
+    },"<")
+
     
     gsap.fromTo(`.${styles.marker1}`,{
       width: '100px',
@@ -89,6 +83,10 @@ export default function Marker() {
         end: '40% bottom',
         onEnter: () => {
           setCount(1)
+          setProjectHomeActive(true)
+        },
+        onLeaveBack: () => {
+          setProjectHomeActive(false)
         },
         onEnterBack: () => {
           setCount(1)
@@ -192,7 +190,11 @@ export default function Marker() {
         },
         onEnterBack: () => {
           setCount(6)
-        }
+          setProjectHomeActive(true)
+        },
+        onLeave: () => {
+          setProjectHomeActive(false)
+        },
       },
       width: '100px',
       height: '100px',

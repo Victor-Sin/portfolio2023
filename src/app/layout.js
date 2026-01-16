@@ -8,6 +8,7 @@ import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 
 const parasitype = localFont({
   variable: "--font-parasitype",
@@ -84,19 +85,21 @@ export default function RootLayout({ children }) {
       <body
         className={`${parasitype.variable} ${courierNew.variable}`}
       >
-        <ReactLenis root options={{duration: 1.5, lerp: 1}}/>
-        <Canvas 
-        style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh",background: "black"}}
-            gl={async (props) => {
-            const renderer = new WebGPURenderer(props)
-            await renderer.init()
-            return renderer
-          }}>
-            <Refraction />
-             <ProjectImage></ProjectImage>
-       </Canvas>
-        <span className="lateralBar"></span>  
-        {children}
+        <ProjectProvider>
+          <ReactLenis root options={{duration: 1.5, lerp: 1}}/>
+          <Canvas 
+          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh",background: "black"}}
+              gl={async (props) => {
+              const renderer = new WebGPURenderer(props)
+              await renderer.init()
+              return renderer
+            }}>
+              <Refraction />
+               <ProjectImage></ProjectImage>
+         </Canvas>
+          <span className="lateralBar"></span>  
+          {children}
+        </ProjectProvider>
       </body>
     </html>
   );
