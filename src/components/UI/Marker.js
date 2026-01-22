@@ -7,7 +7,7 @@ import styles from '@/app/page.module.css';
 import projectsData from '@/data/projects.json';
 import { useProjectCount, useProjectSetCount, useProjectSetHomeActive } from '@/contexts/ProjectContext';
 import { addFadeInOutBlur, animateButtonContainer, animateMarker, cleanupAnimations } from '@/utils/gsapHelpers';
-
+import { useRouter } from 'next/navigation';
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Marker() {
@@ -19,7 +19,7 @@ export default function Marker() {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const infosRef = useRef(null);
   const buttonRef = useRef(null);
-
+  const router = useRouter();
   
   // Trouver le projet actuel basé sur le count
   const currentProject = useMemo(() => {
@@ -337,7 +337,7 @@ export default function Marker() {
 
     <div className={styles.buttonContainer}>
     <button ref={buttonRef} onClick={() =>{
-            router.push(`/project/${currentProject.slug}`)
+            router.push(`/project/test`)
          }}>        
          <span>LEARN MORE</span>
       </button>
