@@ -336,8 +336,10 @@ export default function Marker() {
 
 
     <div className={styles.buttonContainer}>
-      <button ref={buttonRef} onClick={() => window.open(currentProject.link, '_blank')}>
-        <span>LEARN MORE</span>
+    <button ref={buttonRef} onClick={() =>{
+            router.push(`/project/${currentProject.slug}`)
+         }}>        
+         <span>LEARN MORE</span>
       </button>
     </div>
     <div className={styles.counter}>
