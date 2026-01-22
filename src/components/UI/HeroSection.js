@@ -1,0 +1,44 @@
+"use client"
+import { useGSAP } from '@gsap/react';
+import styles from '@/app/page.module.css';
+import Clock from '@/components/UI/Clock';
+import Meter from '@/components/UI/Meter';
+import { animateSplitTextChars, animHomeBlur, cleanupAnimations } from '@/utils/gsapHelpers';
+
+export default function HeroSection() {
+  useGSAP(() => {
+    const splitTextResult = animateSplitTextChars(`.${styles.hero} h1`, {
+      duration: 0.75,
+      delay: 2,
+      staggerAmount: 1,
+      blur: 20
+    });
+
+    const blur1 = animHomeBlur(`.${styles.hero} .${styles.pressure}`, 1.5, 2.75);
+    const blur2 = animHomeBlur(`.${styles.hero} .${styles.date}`, 2.5, 2.5);
+    const blur3 = animHomeBlur(`.${styles.scrollIndicator}`, 1.5, 2.5);
+
+    return () => {
+      cleanupAnimations([
+        splitTextResult,
+        { animation: blur1 },
+        { animation: blur2 },
+        { animation: blur3 }
+      ]);
+    };
+  }, [])
+
+  return (
+    <section className={styles.hero}>
+      <div className={styles.scrollIndicator}>(X)  [ SCROLL ]</div>
+      <span className={styles.middleLine}></span>
+      <h1>CREATIVE DEV</h1>
+      <p className={styles.pressure}>
+        <Meter></Meter>
+      </p>
+      <p className={styles.date}>
+        <Clock />
+      </p>
+    </section>
+  );
+}

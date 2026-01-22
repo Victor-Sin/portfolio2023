@@ -151,7 +151,7 @@ export default function useDataTextureStatic(
             if (dist < distMax && dist > 0) {
                 const dataIndex = 4 * (x + width * y)
                 let force = Math.sqrt(distMax) / Math.sqrt(dist )
-                force = Math.max(0, Math.min(force, 10))        
+                force = Math.max(0, Math.min(force, 2))        
                 // Convert pointer velocity (pixels) into grid-space velocity with per-axis scale
                 const vxGrid = pointerVelocityRef.current.x * (width / 2)
                 const vyGrid = -pointerVelocityRef.current.y * (heightRef.current / 2)

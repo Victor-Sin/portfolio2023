@@ -9,7 +9,7 @@ import { ReactLenis, useLenis } from 'lenis/react'
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
-
+import { Stats } from "@react-three/drei";
 const parasitype = localFont({
   variable: "--font-parasitype",
   // Chemins de fichiers relatifs à ce fichier (src/app/layout.js) vers public/fonts/...
@@ -86,17 +86,18 @@ export default function RootLayout({ children }) {
         className={`${parasitype.variable} ${courierNew.variable}`}
       >
         <ProjectProvider>
-          <ReactLenis root options={{duration: 1.5, lerp: 1}}/>
+          <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
           <Canvas 
-          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh",background: "black"}}
+          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
               gl={async (props) => {
               const renderer = new WebGPURenderer(props)
               await renderer.init()
               return renderer
             }}>
               <Refraction />
-               <ProjectImage></ProjectImage>
+              <ProjectImage />
          </Canvas>
+         <Stats />
           <span className="lateralBar"></span>  
           {children}
         </ProjectProvider>

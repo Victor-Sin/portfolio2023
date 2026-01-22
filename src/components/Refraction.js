@@ -6,7 +6,7 @@ import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
 import {screenUV,screenCoordinate,time,array,texture, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor } from "./Lines";
+import { computeLineColor } from "@/utils/Lines";
 import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureRow from "@/hooks/useDataTextureRow";
 import useScrollProgress from "@/hooks/useScrollProgress";
@@ -17,7 +17,7 @@ export default function Refraction(){
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
     const { dataTexture, shiftTexture } = useDataTextureRow({ size: 100 });
-    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96, 0, false );
+    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(128, 0, false );
     const { size } = useThree()
     const aspect = size.width / size.height
  
@@ -149,7 +149,7 @@ export default function Refraction(){
         
         const circle = distance(vec2(0,0),shadertoyUV).toVar();
         const circleShadow = distance(vec2(0,0),_uv).toVar();
-        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y.mul(0.95), uniforms.PROGRESS).toVar()
+        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y.mul(0.9825), uniforms.PROGRESS).toVar()
 
         const progressBreakpoints = array([float(0.0), float(0.25), float(0.75), float(1.0)]);
         const valuesProgress = array([float(0), float(1.0), float(1.0), float(0.0)]);
@@ -168,7 +168,6 @@ export default function Refraction(){
         const innerBorder = float(1).sub(step(bottomLimit,circle));
         const inner = float(1).sub(smoothstep(0,circleProgress.x.mul(1.25),circle));
 
-        const innerShadow = smoothstep(0,circleProgress.x.mul(1.25),circleShadow).mul(inner);
         const border = outerBorder.sub(innerBorder).toVar();
 
         return vec2(border,inner)
@@ -330,14 +329,15 @@ export default function Refraction(){
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const cursor = gaussianBlur(texture(dataTextureStatic, uvWebGPU),null,2)
+        const textureCursor = texture(dataTextureStatic, uvWebGPU)
+        const cursor = gaussianBlur(textureCursor,null,2)
         const velocityCursor = cursor.rg
 
         const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );
         const velocityInfluence = vec2(0,float(1).sub(distance(vec2(0,0),distordUv.mul(0.5)).mul(1.5)).mul(uniforms.VELOCITY))
 
         const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
-        const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.15))
+        const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.1))
         const circleUV = uvFlowField(shadertoyUV).add(velocityCursor.mul(.15))
 
         const curvedLinesVal = curvedLines()

@@ -2,6 +2,7 @@
   "projects": [
     {
       "id": 1,
+      "slug": "calendar-kempinski-2025",
       "title": "CALENDAR KEMPINSKI 2025",
       "date": "DECEMBER 2023",
       "client": "SCHOOL PROJECT",
@@ -11,6 +12,7 @@
     },
     {
       "id": 2,
+      "slug": "aurora-design-studio",
       "title": "AURORA DESIGN STUDIO",
       "date": "FEBRUARY 2024",
       "client": "AURORA CREATIVE",
@@ -20,6 +22,7 @@
     },
     {
       "id": 3,
+      "slug": "neon-city-app",
       "title": "NEON CITY APP",
       "date": "MAY 2024",
       "client": "TECH STARTUP",
@@ -29,6 +32,7 @@
     },
     {
       "id": 4,
+      "slug": "voyage-e-commerce",
       "title": "VOYAGE E-COMMERCE",
       "date": "AUGUST 2024",
       "client": "VOYAGE TRAVEL",
@@ -38,6 +42,7 @@
     },
     {
       "id": 5,
+      "slug": "metro-exhibition-2024",
       "title": "METRO EXHIBITION 2024",
       "date": "OCTOBER 2024",
       "client": "MUSEUM PARTNERSHIP",
@@ -47,6 +52,7 @@
     },
     {
       "id": 6,
+      "slug": "zenith-portfolio",
       "title": "ZENITH PORTFOLIO",
       "date": "NOVEMBER 2024",
       "client": "FREELANCE",

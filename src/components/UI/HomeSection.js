@@ -1,82 +1,72 @@
 "use client"
-import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from "gsap/SplitText";
 import { useGSAP } from '@gsap/react';
+import { gsap } from 'gsap';
 import styles from '@/app/page.module.css';
 import Clock from '@/components/UI/Clock';
 import Meter from '@/components/UI/Meter';
+import { animateSplitTextWords, animateNav, animateBlurFadeIn, cleanupAnimations } from '@/utils/gsapHelpers';
 
 gsap.registerPlugin(ScrollTrigger);
-gsap.registerPlugin(SplitText);
 
 export default function HomeSection() {
   useGSAP(() => {
-    const split = SplitText.create(`.${styles.home} h2`, {
-      type: "chars, words"
-    })
-
-    gsap.fromTo(split.words, {
-      filter: "blur(5px)",
-      opacity: 0,
+    const splitText1 = animateSplitTextWords(`.${styles.home} h2`, {
+      trigger: `.${styles.container}`,
+      toggleActions: 'play none none none',
+      start: '4.66% 50%',
+      end: '8% 50%',
+      scrub: true,
     }, {
-      scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play none none none',
-        start: '4.66% 50%',
-        end: '8% 50%',
-        scrub: true,
-      },
-      opacity: 1,
-      filter: "blur(0px)",
       duration: 0.75,
-      scale: 1,
       delay: 2,
-      stagger: {
-        amount: 1,
-      }
-    })
+      staggerAmount: 1,
+      blur: 5
+    });
 
-    gsap.fromTo(`.${styles.home} nav ul `, {
-      filter: "blur(5px)",
-      scaleY: 0.5,
-      opacity: 0,
+    const splitText2 = animateSplitTextWords(`.${styles.home} .${styles.pres} li`, {
+      trigger: `.${styles.home} .${styles.pres}`,
+      toggleActions: 'play none none none',
+      start: '-50% bottom',
+      end: '100% 65%',
+      scrub: true,
     }, {
-      scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play none none none',
-        start: '7% 50%',
-        end: '9% 50%',
-        scrub: true,
-      },
-      opacity: 1,
-      filter: "blur(0px)",
       duration: 0.75,
-      scaleY: 1,
       delay: 2,
-      stagger: {
-        amount: 1,
-        from: "random"
-      }
-    })
+      staggerAmount: 1,
+      blur: 5
+    });
 
-    gsap.fromTo(`.${styles.home} .${styles.date} `, {
-      filter: "blur(5px)",
-      opacity: 0,
+    const navResult = animateNav(`.${styles.home} nav ul`, {
+      trigger: `.${styles.container}`,
+      toggleActions: 'play none none none',
+      start: '7% 50%',
+      end: '9% 50%',
+      scrub: true,
     }, {
-      scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play none none none',
-        start: '8.5% 50%',
-        end: '9.5% 50%',
-        scrub: true,
-      },
-      opacity: 1,
-      filter: "blur(0px)",
       duration: 0.75,
-      scale: 1,
       delay: 2,
-    })
+      blur: 5,
+      scaleYStart: 0.5,
+      gapStart: "4.5rem",
+      gapEnd: "5rem",
+      ease: "circ.out"
+    });
+
+    const blurFade = animateBlurFadeIn(`.${styles.home} .${styles.date}`, {
+      trigger: `.${styles.container}`,
+      toggleActions: 'play none none none',
+      start: '4.66% 50%',
+      end: '8% 50%',
+    }, {
+      duration: 0.75,
+      delay: 2,
+      blur: 5
+    });
+
+    return () => {
+      cleanupAnimations([splitText1, splitText2, navResult, blurFade]);
+    };
   }, [])
 
   return (

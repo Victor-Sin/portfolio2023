@@ -5,12 +5,15 @@ import {useMemo, useRef, useEffect} from "react";
 import {DoubleSide, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
-import {uv,screenUV,screenCoordinate,time,Switch,texture, float,distance,log,rotate,EmptyTexture,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {uv,screenUV,positionGeometry,time,texture, float,distance,log,rotate,EmptyTexture,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 import { useProjectCount, useProjectHomeActive } from "@/contexts/ProjectContext";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
+import styles from '@/app/page.module.css';
+import { cleanupAnimations } from "@/utils/gsapHelpers";
+
 
 export default function ProjectImage(){
     const materialRef = useRef()
@@ -53,11 +56,37 @@ export default function ProjectImage(){
     },[count])
     
     useGSAP(() => {
-       gsap.to(uniforms.OPACITY, {
-        value: projectHomeActive ? 1 : 0,
-        duration: .5,
-        ease: "power2.out"
+        const tlInfos = gsap.timeline({ scrollTrigger: {
+            trigger: `.${styles.container}`,
+            toggleActions: 'play reverse play reverse',
+            start: '35% bottom',
+            end: '40% bottom',
+            scrub: true,
+          }}).fromTo(uniforms.OPACITY, {value: 0}, {
+            value:  1 ,
+            duration: 2 ,
+            ease: "linear"
+           })
+
+
+       const tlInfosEnd = gsap.timeline({ scrollTrigger: {
+        trigger: `.${styles.container}`,
+        toggleActions: 'play reverse play reverse',
+        start: '68% bottom',
+        end: '69% bottom',
+        scrub: true,
+      }}).to(uniforms.OPACITY, {
+        value: 0,
+        duration: 2 ,
+        ease: "linear"
        })
+
+        return () => {
+            cleanupAnimations([
+                { timeline: tlInfos, scrollTrigger: tlInfos.scrollTrigger },
+                { timeline: tlInfosEnd, scrollTrigger: tlInfosEnd.scrollTrigger },
+            ]);
+        };
     },[projectHomeActive])
 
     function updateAspect(e){
@@ -199,19 +228,22 @@ export default function ProjectImage(){
         const flowflied = uvFlowField(uv())
         const flowfliedBis = uvFlowField(shadertoyUV)
 
-        const strengthbis =  distance(uv(), vec2(0.5)).mul(2);
-        const strength = distance(flowflied.mul(10), vec2(0.5)).mul(3);
+        const strengthbis =  distance(uv().add(length(flowflied).mul(0.05)), vec2(0.5)).mul(.5);
+        const strength = distance(shadertoyUV, vec2(0.5)).mul(3);
 
         const _grain = grainTextureEffect(flowflied).mul(0.05)
 
-        const uvTest = flowflied.mul(0.15)
+        const uvTest = flowflied.mul(0.05)
 
         // Récupérer l'alpha de la texture originale
-        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv(), strength: 0.05}),null,10)
+        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.5)), strength: 0.05}).add(uvTest.mul(2)),null,10)
         
         // Créer le vec4 final avec l'alpha de la texture originale
-        const finalColor = vec4(blurredColor.rgb.add(_grain), uniforms.OPACITY)
+        const finalColor = vec4(blurredColor.rgb.add(_grain), oneMinus(strengthbis).mul(uniforms.OPACITY))
         mat.colorNode = finalColor
+
+        const position = positionGeometry.add(length(uvTest))
+        mat.positionNode = position
     }
 
     const material = useMemo(() => {
