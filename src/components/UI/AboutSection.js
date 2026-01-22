@@ -131,7 +131,7 @@ export default function AboutSection() {
         </ul>
         <p className={styles.presentation}>
           I am Victor Sin, a Creative Developer based in Paris. I thrive in creating immersive experiences between the 
-          reality and digital. Whether it's through the intricate patterns of Three.js or the limitless possibilities 
+          reality and digital. Whether it&apos;s through the intricate patterns of Three.js or the limitless possibilities 
           of Unity, I delight in bringing life to a range of platforms - from installations and video games to dynamic websites. With an eye for composition, I also delve into web and game design, as part of my approach to creating memorable and sensational experiences.
         </p>
       </div>
