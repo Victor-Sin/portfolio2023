@@ -56,7 +56,7 @@ const courierNew = localFont({
         style: "normal",
       },
       {
-        path: "../../public/fonts/courierNew/CourierNewPS-italicMT.ttf",
+        path: "../../public/fonts/courierNew/CourierNewPS-ItalicMT.ttf",
         weight: "400",
         style: "italic",
       },
