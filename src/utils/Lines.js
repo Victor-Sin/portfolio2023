@@ -196,7 +196,10 @@ export const computeLineColor = /*#__PURE__*/ Fn( ( [ normalizedCoords_immutable
         { name: 'normalizedCoords', type: 'vec2' },
         { name: 'cameraAngles', type: 'vec3' },
         { name: 'rayOrigin', type: 'vec3' },
-        { name: 'lineLimit', type: 'float' }
+        { name: 'lineLimit', type: 'float' },
+        { name: 'lineLimitBis', type: 'float' },
+        { name: 'inBetween', type: 'float' },
+        { name: 'isLast', type: 'float' }
     ]
 } );
 
