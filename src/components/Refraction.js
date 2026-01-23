@@ -129,6 +129,12 @@ export default function Refraction(){
             )
         }
         else if(navType === 'navigate' && !currentPage.includes('project')){
+            gsap.to(uniforms.PROGRESS_LOADER, {
+                value: 1,
+                duration: 1,
+                ease: "linear",
+                delay: 1,
+            })
             gsap.to(uniforms.PROGRESS_PROJECT, {value: 0, duration: 1, ease: "linear", delay: 1})
         }
 
