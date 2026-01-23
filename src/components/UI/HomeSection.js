@@ -6,6 +6,7 @@ import styles from '@/app/page.module.css';
 import Clock from '@/components/UI/Clock';
 import Meter from '@/components/UI/Meter';
 import { animateSplitTextWords, animateNav, animateBlurFadeIn, cleanupAnimations } from '@/utils/gsapHelpers';
+import Navigation from '@/components/UI/Navigation';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -70,32 +71,14 @@ export default function HomeSection() {
   }, [])
 
   return (
-    <section className={styles.home}>
+    <section className={styles.home} id="contact">
       <h2>TO CREATE TAILORED, MEANINGFUL EXPERIENCES. Deep brand INSIGHTS CREATE A UNIQUELY POWERFUL THAT NO ONE HAS ATTEMPTED, WE DELVE INTO PHILOSOPHY TO CREATE TAILORED, MEANINGFUL EXPERIENCES, DEEP BRAND INSIGHTS CREATE A UNIQUELY POWERFUL </h2>
       <span className={styles.middleLine}></span>
-      <nav>
-        <h3>VICTOR SIN</h3>
-        <ul>
-          <li>
-            <a href="#">WORK</a>
-          </li>
-          <li>
-            <a href="#">CONTACT</a>
-          </li>
-          <li>
-            <a href="#">ABOUT</a>
-          </li>
-          <li>
-            <a href="#" className={styles.selected}>HOME</a>
-          </li>
-          <li>
-            <a href="#">LAB</a>
-          </li>
-        </ul>
-        <p className={styles.date}>
-          <Clock />
-        </p>
-      </nav>
+      <Navigation 
+        variant="home" 
+        selectedItem="HOME"
+        customStyles={{ selected: styles.selected, date: styles.date }}
+      />
       <div className={styles.pres}>
         <ul>
           <li>(+) CONTACT</li>

@@ -6,8 +6,10 @@ import { useGSAP } from '@gsap/react';
 import styles from '@/app/page.module.css';
 import projectsData from '@/data/projects.json';
 import { useProjectCount, useProjectSetCount, useProjectSetHomeActive } from '@/contexts/ProjectContext';
-import { addFadeInOutBlur, animateButtonContainer, animateMarker, cleanupAnimations } from '@/utils/gsapHelpers';
+import { addFadeInOutBlur, animateButtonContainer, createMultipleScrollTriggers, cleanupAnimations } from '@/utils/gsapHelpers';
 import { useRouter } from 'next/navigation';
+
+
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Marker() {
@@ -20,6 +22,7 @@ export default function Marker() {
   const infosRef = useRef(null);
   const buttonRef = useRef(null);
   const router = useRouter();
+
   
   // Trouver le projet actuel basé sur le count
   const currentProject = useMemo(() => {
@@ -78,10 +81,10 @@ export default function Marker() {
       end: '69% bottom',
       scrub: true,
       onLeave: () => {
-        setProjectHomeActive(false)
+        setProjectHomeActive(0)
       },
       onEnterBack: () => {
-        setProjectHomeActive(true)
+        setProjectHomeActive(1)
       }
     }});
     
@@ -146,132 +149,101 @@ export default function Marker() {
       }
     );
 
-    const marker1 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '37% bottom',
-      end: '37% bottom',
-      onEnter: () => {
-        setCount(1)
-        setProjectHomeActive(true)
-      },
-      onLeaveBack: () => {
-        setProjectHomeActive(false)
-      },
-      onEnterBack: () => {
-        setCount(1)
-      }
-    }, {
-      fromWidth: '100px',
-      fromHeight: '100px',
-      toWidth: '0px',
-      toHeight: '0px'
-    });
+    // Configuration des ScrollTriggers avec valeurs start/end stockées en dur
+    const markerTriggers = createMultipleScrollTriggers(
+      `.${styles.container}`,
+      [
+        {
+          start: '37% bottom',
+          end: '37% bottom',
+          events: {
+            onEnter: () => {
+              setCount(1)
+            },
+            onEnterBack: () => {
+              setCount(1)
+            }
+          }
+        },
+        {
+          start: '45% bottom',
+          end: '45% bottom',
+          events: {
+            onEnter: () => {
+              setCount(2)
+            },
+            onEnterBack: () => {
+              setCount(2)
+            },
+            onLeaveBack: () => {
+              setCount(1)
+            }
+          }
+        },
+        {
+          start: '50% bottom',
+          end: '50% bottom',
+          events: {
+            onEnter: () => {
+              setCount(3)
+            },
+            onEnterBack: () => {
+              setCount(3)
+            },
+            onLeaveBack: () => {
+              setCount(2)
+            }
+          }
+        },
+        {
+          start: '55% bottom',
+          end: '55% bottom',
+          events: {
+            onEnter: () => {
+              setCount(4)
+            },
+            onEnterBack: () => {
+              setCount(4)
+            },
+            onLeaveBack: () => {
+              setCount(3)
+            }
+          }
+        },
+        {
+          start: '60% bottom',
+          end: '60% bottom',
+          events: {
+            onEnter: () => {
+              setCount(5)
+            },
+            onEnterBack: () => {
+              setCount(5)
+            },
+            onLeaveBack: () => {
+              setCount(4)
+            }
+          }
+        },
+        {
+          start: '65% bottom',
+          end: '65% bottom',
+          events: {
+            onEnter: () => {
+              setCount(6)
+            },
+            onEnterBack: () => {
+              setCount(6)
+            },
+            onLeaveBack: () => {
+              setCount(5)
+            }
+          }
+        }
+      ]
+    );
 
-    const marker2 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '45% bottom',
-      end: '45% bottom',
-      onEnter: () => {
-        setCount(2)
-      },
-      onEnterBack: () => {
-        setCount(2)
-      },
-      onLeaveBack: () => {
-        setCount(1)
-      }
-    }, {
-      fromWidth: '0px',
-      fromHeight: '0px',
-      toWidth: '100px',
-      toHeight: '100px'
-    });
-
-    const marker3 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '50% bottom',
-      end: '50% bottom',
-      onEnter: () => {
-        setCount(3)
-      },
-      onEnterBack: () => {
-        setCount(3)
-      },
-      onLeaveBack: () => {
-        setCount(2)
-      }
-    }, {
-      fromWidth: '100px',
-      fromHeight: '100px',
-      toWidth: '0px',
-      toHeight: '0px'
-    });
-
-    const marker4 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '55% bottom',
-      end: '55% bottom',
-      onEnter: () => {
-        setCount(4)
-      },
-      onEnterBack: () => {
-        setCount(4)
-      },
-      onLeaveBack: () => {
-        setCount(3)
-      }
-    }, {
-      fromWidth: '0px',
-      fromHeight: '0px',
-      toWidth: '100px',
-      toHeight: '100px'
-    });
-
-    const marker5 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '60% bottom',
-      end: '60% bottom',
-      onEnter: () => {
-        setCount(5)
-      },
-      onEnterBack: () => {
-        setCount(5)
-      },
-      onLeaveBack: () => {
-        setCount(4)
-      }
-    }, {
-      fromWidth: '100px',
-      fromHeight: '100px',
-      toWidth: '0px',
-      toHeight: '0px'
-    });
-
-    const marker6 = animateMarker(`.${styles.marker1}`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none reverse none',
-      start: '65% bottom',
-      end: '65% bottom',
-      onEnter: () => {
-        setCount(6)
-      },
-      onEnterBack: () => {
-        setCount(6)
-      },
-      onLeaveBack: () => {
-        setCount(5)
-      }
-    }, {
-      fromWidth: '0px',
-      fromHeight: '0px',
-      toWidth: '100px',
-      toHeight: '100px'
-    });
+    const [marker1, marker2, marker3, marker4, marker5, marker6] = markerTriggers;
 
     return () => {
       cleanupAnimations([
@@ -320,7 +292,7 @@ export default function Marker() {
       <div className={styles.imagesFrameMask}></div>
     </div>
   </div>
-  <div className={styles.projets}> 
+  <div className={styles.projets} id="work"> 
     <div className={styles.headStatic}>
       <h5>PROJECTS</h5>
     </div>
@@ -337,7 +309,11 @@ export default function Marker() {
 
     <div className={styles.buttonContainer}>
     <button ref={buttonRef} onClick={() =>{
-            router.push(`/project/test`)
+            setProjectHomeActive("redirectProject")
+            setTimeout(() => {
+              router.push(`/project/test`)
+              setProjectHomeActive(null)
+            }, 2000)
          }}>        
          <span>LEARN MORE</span>
       </button>

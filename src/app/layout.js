@@ -6,6 +6,7 @@ import { Canvas } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
+import { useEffect } from 'react'
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
@@ -79,6 +80,14 @@ export default function RootLayout({ children }) {
   const lenis = useLenis((lenis) => {
     // called every scroll
   })
+
+  // Désactiver la restauration automatique du scroll lors d'un reload
+  // Cela permet au navigateur de revenir en haut naturellement lors d'un reload
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+  }, [])
   
   return (
     <html lang="en">

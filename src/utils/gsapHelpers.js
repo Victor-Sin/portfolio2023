@@ -343,6 +343,97 @@ export function animateMarker(selector, scrollTriggerConfig, sizeConfig = {}) {
 }
 
 /**
+ * Crée un ScrollTrigger avec gestion des événements
+ * @param {Object} config - Configuration du ScrollTrigger
+ * @param {string} config.trigger - Sélecteur CSS de l'élément trigger
+ * @param {string} config.start - Position de départ (ex: '37% bottom')
+ * @param {string} config.end - Position de fin (ex: '37% bottom')
+ * @param {string} config.toggleActions - Actions de toggle (défaut: 'play none reverse none')
+ * @param {Function} config.onEnter - Callback appelé lors de l'entrée
+ * @param {Function} config.onEnterBack - Callback appelé lors de l'entrée en sens inverse
+ * @param {Function} config.onLeave - Callback appelé lors de la sortie
+ * @param {Function} config.onLeaveBack - Callback appelé lors de la sortie en sens inverse
+ * @param {Function} config.onUpdate - Callback appelé à chaque update
+ * @param {Function} config.onToggle - Callback appelé lors du toggle
+ * @param {Object} config.additionalConfig - Configuration supplémentaire pour ScrollTrigger (scrub, pin, etc.)
+ * @returns {Object} - Objet contenant { scrollTrigger }
+ */
+export function createScrollTrigger(config) {
+  const {
+    trigger,
+    start,
+    end,
+    toggleActions = 'play none reverse none',
+    onEnter,
+    onEnterBack,
+    onLeave,
+    onLeaveBack,
+    onUpdate,
+    onToggle,
+    additionalConfig = {}
+  } = config;
+
+  const scrollTriggerConfig = {
+    trigger,
+    start,
+    end,
+    toggleActions,
+    ...additionalConfig
+  };
+
+  // Ajouter les callbacks s'ils sont fournis
+  if (onEnter) scrollTriggerConfig.onEnter = onEnter;
+  if (onEnterBack) scrollTriggerConfig.onEnterBack = onEnterBack;
+  if (onLeave) scrollTriggerConfig.onLeave = onLeave;
+  if (onLeaveBack) scrollTriggerConfig.onLeaveBack = onLeaveBack;
+  if (onUpdate) scrollTriggerConfig.onUpdate = onUpdate;
+  if (onToggle) scrollTriggerConfig.onToggle = onToggle;
+
+  // Créer une timeline vide avec le ScrollTrigger pour pouvoir le récupérer
+  const timeline = gsap.timeline({ scrollTrigger: scrollTriggerConfig });
+
+  return { scrollTrigger: timeline.scrollTrigger, timeline };
+}
+
+/**
+ * Crée plusieurs ScrollTriggers à partir d'un tableau de configurations
+ * Utile pour créer plusieurs triggers avec des valeurs start/end prédéfinies
+ * @param {string} triggerSelector - Sélecteur CSS commun pour tous les triggers
+ * @param {Array} triggerConfigs - Tableau de configurations pour chaque trigger
+ * @param {Object} triggerConfigs[].start - Position de départ
+ * @param {Object} triggerConfigs[].end - Position de fin
+ * @param {Object} triggerConfigs[].events - Objet contenant les callbacks (onEnter, onEnterBack, etc.)
+ * @param {Object} triggerConfigs[].additionalConfig - Configuration supplémentaire
+ * @param {string} defaultToggleActions - Actions de toggle par défaut (défaut: 'play none reverse none')
+ * @returns {Array} - Tableau d'objets contenant { scrollTrigger, timeline }
+ */
+export function createMultipleScrollTriggers(triggerSelector, triggerConfigs, defaultToggleActions = 'play none reverse none') {
+  return triggerConfigs.map(config => {
+    const {
+      start,
+      end,
+      events = {},
+      additionalConfig = {},
+      toggleActions = defaultToggleActions
+    } = config;
+
+    return createScrollTrigger({
+      trigger: triggerSelector,
+      start,
+      end,
+      toggleActions,
+      onEnter: events.onEnter,
+      onEnterBack: events.onEnterBack,
+      onLeave: events.onLeave,
+      onLeaveBack: events.onLeaveBack,
+      onUpdate: events.onUpdate,
+      onToggle: events.onToggle,
+      additionalConfig
+    });
+  });
+}
+
+/**
  * Nettoie toutes les animations, timelines et ScrollTriggers
  * @param {Array} cleanupItems - Tableau d'objets contenant { split, animation, scrollTrigger, timeline }
  */

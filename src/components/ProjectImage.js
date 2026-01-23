@@ -8,19 +8,24 @@ import {useFrame, useThree} from "@react-three/fiber";
 import {uv,screenUV,positionGeometry,time,texture, float,distance,log,rotate,EmptyTexture,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
-import { useProjectCount, useProjectHomeActive } from "@/contexts/ProjectContext";
+import { useProjectCount } from "@/contexts/ProjectContext";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import styles from '@/app/page.module.css';
 import { cleanupAnimations } from "@/utils/gsapHelpers";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import useNavigationDetection from "@/hooks/useNavigationDetection";
+gsap.registerPlugin(ScrollTrigger);
 
 
 export default function ProjectImage(){
     const materialRef = useRef()
     const glassWallRef = useRef()
+    const tlInRef = useRef(null)
+    const tlOutRef = useRef(null)
     const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96,4/3,true );
     const count = useProjectCount()
-    const projectHomeActive = useProjectHomeActive()
+    const navigationInfo = useNavigationDetection()
 
     const { size } = useThree()
     const aspect = size.width / size.height
@@ -56,38 +61,51 @@ export default function ProjectImage(){
     },[count])
     
     useGSAP(() => {
-        const tlInfos = gsap.timeline({ scrollTrigger: {
+        if(navigationInfo.currentPage == "/"){
+            tlInRef.current = gsap.timeline({ scrollTrigger: {
+                trigger: `.${styles.container}`,
+                toggleActions: 'play reverse play reverse',
+                start: '35% bottom',
+                end: '40% bottom',
+                scrub: true,
+              }}).fromTo(uniforms.OPACITY, {value: 0}, {
+                value:  1 ,
+                duration: 2 ,
+                ease: "linear"
+               })
+    
+    
+           tlOutRef.current = gsap.timeline({ scrollTrigger: {
             trigger: `.${styles.container}`,
             toggleActions: 'play reverse play reverse',
-            start: '35% bottom',
-            end: '40% bottom',
+            start: '68% bottom',
+            end: '69% bottom',
             scrub: true,
-          }}).fromTo(uniforms.OPACITY, {value: 0}, {
-            value:  1 ,
+          }}).to(uniforms.OPACITY, {
+            value: 0,
             duration: 2 ,
             ease: "linear"
            })
-
-
-       const tlInfosEnd = gsap.timeline({ scrollTrigger: {
-        trigger: `.${styles.container}`,
-        toggleActions: 'play reverse play reverse',
-        start: '68% bottom',
-        end: '69% bottom',
-        scrub: true,
-      }}).to(uniforms.OPACITY, {
-        value: 0,
-        duration: 2 ,
-        ease: "linear"
-       })
+        }
+        else{
+            if(tlInRef.current && tlOutRef.current){
+            cleanupAnimations([
+                { timeline: tlInRef.current, scrollTrigger: tlInRef.current.scrollTrigger },
+                { timeline: tlOutRef.current, scrollTrigger: tlOutRef.current.scrollTrigger },
+            ]);
+        }}
+   
 
         return () => {
-            cleanupAnimations([
-                { timeline: tlInfos, scrollTrigger: tlInfos.scrollTrigger },
-                { timeline: tlInfosEnd, scrollTrigger: tlInfosEnd.scrollTrigger },
-            ]);
+            if(tlInRef.current && tlOutRef.current){
+                cleanupAnimations([
+                        { timeline: tlInRef.current, scrollTrigger: tlInRef.current.scrollTrigger },
+                        { timeline: tlOutRef.current, scrollTrigger: tlOutRef.current.scrollTrigger },
+                    ]);
+            }
         };
-    },[projectHomeActive])
+   
+    },[navigationInfo.currentPage])
 
     function updateAspect(e){
         if(e){

@@ -29,7 +29,7 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <section className={styles.hero}>
+    <section className={styles.hero} id="home">
       <div className={styles.scrollIndicator}>(X)  [ SCROLL ]</div>
       <span className={styles.middleLine}></span>
       <h1>CREATIVE DEV</h1>

@@ -1,7 +1,7 @@
 "use client"
 
 import {useFBO, useTexture} from "@react-three/drei";
-import {useMemo, useRef, useState, useEffect, useCallback} from "react";
+import {useMemo, useRef, useEffect, useCallback, useState} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
@@ -11,15 +11,35 @@ import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureRow from "@/hooks/useDataTextureRow";
 import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
+import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useProjectHomeActive, useProjectCount } from '@/contexts/ProjectContext';
+import { useLenis } from 'lenis/react';
+
+import { useGSAP } from '@gsap/react';
+import { gsap } from "gsap";
 
 export default function Refraction(){
     const materialRef = useRef()
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
-    const { dataTexture, shiftTexture } = useDataTextureRow({ size: 100 });
+    const count = useProjectCount()
+    const projectHomeActive = useProjectHomeActive()
     const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(128, 0, false );
     const { size } = useThree()
     const aspect = size.width / size.height
+    
+    // Navigation detection via hook personnalisé
+    const navigationInfo = useNavigationDetection()
+    
+    // Accès à l'instance Lenis pour le scroll
+    const lenis = useLenis()
+
+    const optionsColors = useMemo(() => {
+        return {
+            colorsCurrent: [new Color('#76869B'), new Color('#AAA97F'), new Color('#F39089')],
+            colorsNext: [new Color('#9E4DCE'), new Color('#E9EB7D'), new Color('#E6D3A4')],
+        }
+    },[])
  
     
     const textureNoise = useTexture("/images/noise.png")
@@ -29,12 +49,14 @@ export default function Refraction(){
     const uniforms = useMemo(() => {
         return {
             ASPECT: uniform(aspect),
-            CAMERA_HEIGHT: uniform(10),
-            CAMERA_TILT_ANGLE: uniform(0.97),
             PROGRESS: uniform(0),
-            BACKGROUND_COLOR: uniform(new Color('#FDE7C5')),
             MOUSE_POSITION: uniform(new Vector2(0,0)),
-            VELOCITY: uniform(0)
+            PROGRESS_PROJECT: uniform(0),
+            PROGRESS_PROJECT_TRANSITION: uniform(0),
+            PROGRESS_LOADER: uniform(0),
+            PROJECT_COLORS_CURRENT: uniformArray(optionsColors.colorsCurrent),
+            PROJECT_COLORS_NEXT: uniformArray(optionsColors.colorsNext),
+
         }
     },[])
 
@@ -48,11 +70,10 @@ export default function Refraction(){
 
     const onUpdateCallback = useCallback(({ progress,velocity }) => {
         uniforms.PROGRESS.value = progress;
-        uniforms.VELOCITY.value = velocity;
     }, [uniforms]);
   
     // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
-    const { progress, velocity, speed, update } = useScrollProgress({
+    const {  update } = useScrollProgress({
         onUpdate: onUpdateCallback
     },0, true);
 
@@ -64,13 +85,86 @@ export default function Refraction(){
         };
     }, []);
 
+    useGSAP(() => {
+        const navType = navigationInfo.navigationType
+        const currentPage = navigationInfo.currentPage
+        const previousPage = navigationInfo.previousPage
+        console.log(previousPage, currentPage)
+        if(navType === 'reload' || navType === 'external'){
+            // Le scroll revient automatiquement en haut grâce à scrollRestoration: 'manual' dans layout.js
+            
+            if(currentPage.includes('project')){
+                gsap.set(uniforms.PROGRESS_PROJECT, {value: 1})
+            }
+            else if(currentPage === '/'){
+                gsap.set(uniforms.PROGRESS_PROJECT, {value: 0})
+            }
+            gsap.fromTo(uniforms.PROGRESS_LOADER, {value: 0}, {
+                value: 1,
+                duration: 1,
+                ease: "linear",
+                delay: 1,
+            })
+  
+            // ANIMATION D'ARRIVER SITE GLOBALE
+        }
+        else if(navType === 'back' || navType === 'forward'){
+            // Si on arrive sur une page project, remettre le scroll en haut
+            if (currentPage.includes('project')) {
+                if (lenis) {
+                    lenis.scrollTo(0, { immediate: true, duration: 0 })
+                } else if (typeof window !== 'undefined') {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+                }
+            }
+            
+            const isProjectPage = previousPage.includes('project')
+            gsap.to(uniforms.PROGRESS_PROJECT, 
+                {
+                    value: isProjectPage ? 0 : 1, 
+                    duration: 1, 
+                    ease: "linear", 
+                    delay: 1
+                }
+            )
+        }
+        else if(navType === 'navigate' && !currentPage.includes('project')){
+            gsap.to(uniforms.PROGRESS_PROJECT, {value: 0, duration: 1, ease: "linear", delay: 1})
+        }
+
+    },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
+
+    useGSAP(() => {
+        if(((navigationInfo.currentPage == "/" || navigationInfo.currentPage == null) && projectHomeActive == "redirectProject")){
+            gsap.to(uniforms.PROGRESS_PROJECT, {value: projectHomeActive == "redirectProject" ? 1 : 0, duration: 1, ease: "linear", delay: 1})
+        }
+    },[projectHomeActive,navigationInfo.currentPage])
+
+    useGSAP(() => {
+        if(count == 5){
+            optionsColors.colorsNext[0].set('#949494')
+            optionsColors.colorsNext[1].set('#EEF13A')
+            optionsColors.colorsNext[2].set('#D6516E')
+
+
+
+            gsap.timeline().to(uniforms.PROGRESS_PROJECT_TRANSITION, {value: 1, duration: 1, ease: "linear", delay: 1, 
+                onComplete: () => {
+                    optionsColors.colorsCurrent[0].set('#949494')
+                    optionsColors.colorsCurrent[1].set('#EEF13A')
+                    optionsColors.colorsCurrent[2].set('#D6516E')
+                    uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
+                                }
+            })
+        }
+    },[count])
+
 
 
     const grainTextureEffect = Fn(([_uv]) => {
         return fract(sin(dot(_uv, vec2(12.9898, 78.233))).mul(43758.5453123))
       })
     
-   
 
     const partionProgress = Fn(([progress_ref,partition_sequence,lengthPartition]) => {
         const sequenceIndex = float(0).toVar()
@@ -208,7 +302,7 @@ export default function Refraction(){
 
 
 
-    const colorGradient = Fn(([uv_immutable,colors,colorsPos,colorsCount]) => {
+    const colorGradient = Fn(([uv_immutable,colors,colorsPos,colorsCount,colorsBis,transitionProgress = 0, useProgress = 1]) => {
 
         const _uv = vec2(uv_immutable).toVar();
         const uv0 = vec2(uv_immutable).toVar();
@@ -244,10 +338,10 @@ export default function Refraction(){
             // Note that we're using _time here, which will make these positions animated
             const x = sin(_time.mul(i.mul(0.75)).add(baseAngle)).mul(0.5)
             const y = cos(_time.mul(2).add(baseAngle.mul(2.5))).mul(1)
-            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.add(0.25))))
+            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.mul(useProgress).add(0.25))))
         
             // Get a specific color
-            const _c = colors.element(i)
+            const _c = mix(colors.element(i),colorsBis.element(i),transitionProgress)
         
             // Determine weightings
             // Calculate distance from current fragment to this color spot
@@ -334,7 +428,6 @@ export default function Refraction(){
         const velocityCursor = cursor.rg
 
         const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );
-        const velocityInfluence = vec2(0,float(1).sub(distance(vec2(0,0),distordUv.mul(0.5)).mul(1.5)).mul(uniforms.VELOCITY))
 
         const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
         const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.1))
@@ -345,18 +438,24 @@ export default function Refraction(){
         const baseLineColor = computeLines(earlyProgress,inBetween,finalUVLines).mul(0.15).mul(curvedLinesVal.y);
         const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,finalUVLines,inBetween).mul(0.15).mul(curvedLinesVal.y);
         const circleVal = circle(circleUV,inBetweenLimits);
-        const colorGradientVal = colorGradient(finalUV,colors,colorsPos,colorsCount);
+        const colorGradientVal = colorGradient(finalUV,colors,colorsPos,colorsCount,colorsBackground);
         const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
         const innerColor = mix(float(0),circleVal.y.mul(colorGradientVal),inBetween).mul(1);
 
-        const colorGradientValBackground = colorGradient(finalUV,colorsBackground,colorsPosBackground,colorsCountBackground);
+        const colorGradientValBackground = colorGradient(finalUV,colorsBackground,colorsPosBackground,colorsCountBackground,colorsBackground);
 
 
         const _grain = grainTextureEffect(finalUV).mul(0.1)
         const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5))
         const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
+
+        const loaderBackground = colorsBackground.element(0);
+        const homeBackground = colorGradientValBackground.mul(effectsColor)
+        const projectBackground = colorGradient(finalUV,uniforms.PROJECT_COLORS_CURRENT,colorsPosBackground,colorsCountBackground,uniforms.PROJECT_COLORS_NEXT,uniforms.PROGRESS_PROJECT_TRANSITION,0);
         
-        mat.colorNode = colorGradientValBackground.mul(effectsColor).add(_grain)
+        const finalPageBackground = mix(homeBackground,projectBackground,uniforms.PROGRESS_PROJECT);
+        const finalBackground = mix(loaderBackground,finalPageBackground,uniforms.PROGRESS_LOADER);
+        mat.colorNode = finalBackground.add(_grain)
    
     }
 

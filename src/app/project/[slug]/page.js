@@ -5,35 +5,48 @@ import projectsData from '@/data/projects.json'
 import { findProjectBySlug } from '@/utils/slug'
 import styles from './page.module.css'
 import Clock from '@/components/UI/Clock'
+import { useGSAP } from '@gsap/react';
+import { gsap } from "gsap";
+import { useProjectSetHomeActive, useProjectSetCount } from '@/contexts/ProjectContext';
+import Navigation from '@/components/UI/Navigation';
 
 export default function ProjectPage({ params }) {
   // Utiliser use() pour accéder aux params (Next.js 15)
   const { slug } = use(params)
   const router = useRouter()
+  const setProjectHomeActive = useProjectSetHomeActive()
   const project = findProjectBySlug(slug, projectsData.projects)
+  const setCount = useProjectSetCount()
+
+
+  useGSAP(() => {
+    gsap.fromTo(`.${styles.projectPage}`, {
+      opacity: 0,
+    }, {
+      opacity: 1,
+      duration: 1,
+      delay: 2,
+      ease: "linear"
+    })
+  },[])
+
+  function handleClick(id) {
+      setProjectHomeActive("redirectHome")
+      setTimeout(() => {
+        router.push(`/#${id}`)
+        setProjectHomeActive(null)
+      }, 2000)
+  }
 
   return (
     <div className={styles.projectPage}>
       <div className={styles.projectContent}>
-        <nav>
-          <ul>
-            <li>
-              <a href="#" className={styles.selected}>WORK</a>
-            </li>
-            <li>
-              <a href="#">CONTACT</a>
-            </li>
-            <li>
-              <a href="#">ABOUT</a>
-            </li>
-            <li>
-              <a href="#" >HOME</a>
-            </li>
-            <li>
-              <a href="#">LAB</a>
-            </li>
-          </ul>
-        </nav>
+        <Navigation 
+          variant="project" 
+          selectedItem="WORK" 
+          onItemClick={handleClick}
+          customStyles={{ selected: styles.selected }}
+        />
         <span className={styles.middleLine}></span>
         <div className={styles.projectDetails}>
           <h3>SERIAL KILLERS</h3>
@@ -52,7 +65,7 @@ export default function ProjectPage({ params }) {
         </div>
 
       </div>
-      <div className={styles.projectImages}>
+      <div className={styles.projectImages} >
         <div className={styles.head}><Clock></Clock></div>
         <span className={styles.middleLine}></span>
         <div className={styles.imagesDetails}>

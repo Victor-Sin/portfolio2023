@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { animateSplitTextChars, animateSplitTextWords, animateNav, cleanupAnimations } from '@/utils/gsapHelpers';
+import Navigation from '@/components/UI/Navigation';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -83,28 +84,14 @@ export default function AboutSection() {
   }, [])
 
   return (
-    <section className={styles.about}>
+    <section className={styles.about} id="about">
       <Meter></Meter>
 
-      <nav>
-        <ul>
-          <li>
-            <a href="#">WORK</a>
-          </li>
-          <li>
-            <a href="#">CONTACT</a>
-          </li>
-          <li>
-            <a href="#">ABOUT</a>
-          </li>
-          <li>
-            <a href="#" className={styles.selected}>HOME</a>
-          </li>
-          <li>
-            <a href="#">LAB</a>
-          </li>
-        </ul>
-      </nav>
+      <Navigation 
+        variant="about" 
+        selectedItem="HOME"
+        customStyles={{ selected: styles.selected }}
+      />
       <h2>ABOUT ME</h2>
       <div className={styles.lineContainer}>
         <span className={styles.middleLine}></span>
