@@ -38,7 +38,7 @@
         top: 50%;
         left: 50%;
         font-family: var(--font-parasitype);
-        font-size: clamp(80px, 7.5svw, 125px);
+        font-size: clamp(50px, 7.5svw, 125px);
         font-weight: 500;
         text-wrap: nowrap;
         transform: translate(-50%, -50%);
@@ -47,9 +47,13 @@
     & .pressure {
         position: absolute;
         top: calc(50% + 2em);
-        left: 10svw;
+        left: clamp(2rem, 8svw, 12rem);
         font-size: 1em;
         font-weight: bold;
+        @media (max-width: 768px) {
+            left: 2rem;
+            top: calc(50% + 3.5em);
+        }
     }
     & .date {
         position: absolute;
@@ -57,6 +61,9 @@
         right: 2.5em;
         font-size: 1em;
         font-weight: bold;
+        @media (max-width: 768px) {
+            top: calc(50% + 3.5em);
+        }
     }
 
     .meter{
@@ -73,21 +80,39 @@
         font-size: 1rem;
         font-weight: bold;
         text-align: center;
-        width: 70%;
+        width: 75%;
         margin: 0 auto;
+        text-transform: uppercase;
         mix-blend-mode: color-burn;
+        @media (max-width: 1280px) {
+            width: 90%;
+        }
+        @media (max-width: 1024px) {
+            width: 95%;
+        }
+        @media (max-width: 768px) {
+            text-wrap:  nowrap;
+            width: 90%;
+            overflow: hidden;
+        }
 
     }
     & .middleLine {
         position: absolute;
-        top: 4em;
+        top: 4rem;
         left: -1.25rem;
         height: 1px;
         width: 100svw;
         border: none;
         background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
         mix-blend-mode: color-burn;
-
+        @media (max-width: 1024px) {
+            top: 4rem;
+        }
+        
+        @media (max-width: 768px) {
+            top: 3rem;
+        }
     }
     & nav {
         position: relative;
@@ -97,7 +122,10 @@
         justify-content: space-between;
         width: calc(100% - 2.5em * 2);
         overflow: hidden;
-
+        @media (max-width: 768px) {
+            overflow: visible;
+            margin-top: 6.5rem;
+        }
         & h3 {
             font-size: 1em;
             font-weight: bold;
@@ -106,6 +134,9 @@
             pointer-events: all;
             padding: 0em 0.25em;
             color: #716725;
+            @media (max-width: 768px) {
+                display: none;
+            }
         }
         & > ul {
             display: flex;
@@ -117,7 +148,6 @@
             font-size: 16px;
             mix-blend-mode: color-burn;
             font-size: 1rem;
-
             &::before {
                 content: "(X)";
                 position: absolute;
@@ -125,6 +155,10 @@
                 left: -6em;
                 font-size: 1em;
                 font-weight: bold;
+                @media (max-width: 768px) {
+                    left: 50%;
+                    top : -2.5rem;
+                }
             }
             & li {
                 position: relative;
@@ -176,6 +210,15 @@
                 }
             }
         }
+        .date{
+            font-weight: bold;
+            mix-blend-mode: color-burn;
+            @media (max-width: 768px) {
+                position: absolute;
+                top: -2.5rem;
+                right: 0;
+            }
+        }
     }
     & .pres {
         margin-left: 3.5em;
@@ -183,21 +226,43 @@
         font-weight: bold;
         text-transform: uppercase;
         pointer-events: none;
-        mix-blend-mode: color-burn;
+        @media (max-width: 768px) {
+            margin-top: 2.5rem;
+        }
 
         & ul {
             display: flex;
             flex-direction: column;
             gap: 0em;
             list-style: none;
+            & .titleMobile{
+                display: none;
+                font-size: 1em;
+                font-weight: bold;
+                margin: 0;
+                background : white;
+                pointer-events: all;
+                padding: 0em 0.25em;
+                color: #716725;
+                width: fit-content;
+                margin-bottom: 1rem; 
+                margin-left: -1.5rem;
+                @media (max-width: 768px) {
+                    display: inline-block;
+                }
+            }
+            & li:not(.titleMobile) {
+                mix-blend-mode: color-burn;
 
-            & li {
                 & ul {
                     margin: 1.5em 0em;
                     display: flex;
                     flex-direction: column;
                     gap: 0em;
                     pointer-events: none;
+                    @media (max-width: 768px) {
+                        gap: .5em;
+                    }
 
                     &.contact li{
                             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -217,9 +282,7 @@
         }
     }
 
-    .date{
-        font-weight: bold;
-    }
+ 
 
     .meter{
         mix-blend-mode: color-burn;
@@ -228,6 +291,10 @@
         width: 22.5em;
         margin-top: 2em;
         margin-left: -1.5em;
+        @media (max-width: 768px) {
+            width: 20em;
+            margin-top: 5rem;
+        }
         &::after {
             content: "";
             position: absolute;

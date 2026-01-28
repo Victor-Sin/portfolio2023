@@ -36,7 +36,7 @@ export default function Navigation({
   }
 
   const showTitle = variant === 'home'
-  const showClock = variant === 'home'
+  const showClock = variant.includes('home')
 
   return (
     <nav className={customStyles.nav || ''}>

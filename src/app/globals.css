@@ -1,7 +1,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  font-size: 15px;
+  font-size: clamp(10px, 1.25vw, 15px);
   font-family: var(--font-courier-new);
   box-sizing: border-box;
   padding: 0;
