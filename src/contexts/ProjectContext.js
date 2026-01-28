@@ -6,7 +6,7 @@ const ProjectContext = createContext(null)
 export function ProjectProvider({ children }) {
   // Stocker les valeurs dans des refs (ne déclenche pas de re-render)
   const countRef = useRef(1)
-  const projectHomeActiveRef = useRef(0) // 0 ou 1 au lieu de boolean
+  const projectHomeActiveRef = useRef(null) // 0 ou 1 au lieu de boolean
   
   // Un seul système de listeners pour tous les changements
   const listenersRef = useRef(new Set())

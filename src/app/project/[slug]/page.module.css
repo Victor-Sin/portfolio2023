@@ -96,18 +96,29 @@
                 }
             }
         }
-        & .middleLine {
+        & .middleLineContainer {
             position: absolute;
             top: 4em;
             left: 0px;
-            height: 1px;
+            height: 20px;
             width: 100%;
+            overflow: hidden;
             border: none;
             display: inline-block;
-            margin: 0;
-            padding: 0;
-            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            & .middleLine {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 1px;
+                width: calc(65vw - 1.75rem); /* 60% de la largeur moins la moitié du gap */
+                border: none;
+                display: inline-block;
+                margin: 0;
+                padding: 0;
+                background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            }
         }
+ 
         & .projectDetails {
             position: relative;
             margin-left: calc(20px + 3rem);
@@ -126,7 +137,6 @@
                 width: 100%;
                 gap: 2rem;
                 text-transform: uppercase;
-                background-color: white;
 
                 & .projectDescription {
                     font-size: 1rem;
@@ -161,20 +171,31 @@
             pointer-events: none;
 
         }
-        & .middleLine {
+
+        & .middleLineContainer {
             position: absolute;
             top: 4em;
-            left: 0em;
-            height: 1px;
+            right: 0px;
+            height: 20px;
             width: 100%;
             border: none;
             display: inline-block;
-            margin: 0;
-            padding: 0;
-            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-            mix-blend-mode: color-burn;
-            pointer-events: none;
+            overflow: hidden;
+
+            & .middleLine {
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: 1px;
+                width:  calc(100vw - 65vw - 1.75rem); /* 60% de la largeur moins la moitié du gap */
+                border: none;
+                display: inline-block;
+                margin: 0;
+                padding: 0;
+                background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            }
         }
+    
 
         & .imagesDetails {
             margin-top: 3rem;
@@ -233,11 +254,17 @@
             isolation: isolate;
             mix-blend-mode: normal;
             pointer-events: none;
-
-            & img {
-                mix-blend-mode: normal;
+            & .imageFrame {
                 width: 100%;
-                height: auto;
+                height: 100%;
+                overflow: hidden;
+
+                & img {
+                    width: 100%;
+                    height: auto;
+                    object-fit: cover;
+                    transform-origin: center top;
+                }
             }
         }
   

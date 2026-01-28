@@ -89,7 +89,7 @@ export default function Refraction(){
         const navType = navigationInfo.navigationType
         const currentPage = navigationInfo.currentPage
         const previousPage = navigationInfo.previousPage
-        console.log(previousPage, currentPage)
+        
         if(navType === 'reload' || navType === 'external'){
             // Le scroll revient automatiquement en haut grâce à scrollRestoration: 'manual' dans layout.js
             

@@ -5,9 +5,31 @@ import HeroSection from "@/components/UI/HeroSection";
 import HomeSection from "@/components/UI/HomeSection";
 import AboutSection from "@/components/UI/AboutSection";
 import Marker from "@/components/UI/Marker";
+import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 
 export default function Home() {
 
+  const navigationInfo = useNavigationDetection()
+    useGSAP(() => {
+      const navType = navigationInfo.navigationType
+      const currentPage = navigationInfo.currentPage
+      const previousPage = navigationInfo.previousPage
+      console.log(navType, currentPage, previousPage,"PAGE NAVIGATION")
+
+      if(navType === 'navigate'){
+          gsap.fromTo(`.${styles.container}`, {
+            opacity: 0,
+          }, {
+              opacity: 1,
+              duration: 2,
+              ease: "power3.out",
+              delay: 1,
+          })
+      }
+
+  },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
   return (
     <div className={styles.page}>

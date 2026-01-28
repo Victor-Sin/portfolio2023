@@ -33,12 +33,12 @@ export default function HeroSection() {
       <div className={styles.scrollIndicator}>(X)  [ SCROLL ]</div>
       <span className={styles.middleLine}></span>
       <h1>CREATIVE DEV</h1>
-      <p className={styles.pressure}>
+      <div className={styles.pressure}>
         <Meter></Meter>
-      </p>
-      <p className={styles.date}>
+      </div>
+      <div className={styles.date}>
         <Clock />
-      </p>
+      </div>
     </section>
   );
 }

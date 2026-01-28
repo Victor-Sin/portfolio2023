@@ -11,6 +11,11 @@ import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { Stats } from "@react-three/drei";
+import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import styles from "@/app/page.module.css";
+
 const parasitype = localFont({
   variable: "--font-parasitype",
   // Chemins de fichiers relatifs à ce fichier (src/app/layout.js) vers public/fonts/...
@@ -88,6 +93,27 @@ export default function RootLayout({ children }) {
       window.history.scrollRestoration = 'manual'
     }
   }, [])
+
+  const navigationInfo = useNavigationDetection()
+  useGSAP(() => {
+    const navType = navigationInfo.navigationType
+    const currentPage = navigationInfo.currentPage
+    const previousPage = navigationInfo.previousPage
+    console.log(navType, currentPage, previousPage,"PAGE NAVIGATION")
+
+    if(navType === 'navigate'){
+        gsap.fromTo(`.${styles.container}`, {
+          opacity: 0,
+        }, {
+            opacity: 1,
+            duration: 2,
+            ease: "power3.out",
+            delay: 1,
+        })
+    }
+
+},[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
+
   
   return (
     <html lang="en">
