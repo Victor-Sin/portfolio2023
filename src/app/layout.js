@@ -10,8 +10,8 @@ import { useEffect } from 'react'
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
+import { NavigationProvider, useNavigationInfo } from "@/contexts/NavigationContext";
 import { Stats } from "@react-three/drei";
-import useNavigationDetection from "@/hooks/useNavigationDetection";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import styles from "@/app/page.module.css";
@@ -80,21 +80,18 @@ const courierNew = localFont({
 });
 
 
-export default function RootLayout({ children }) {
-
+function LayoutBody({ children }) {
   const lenis = useLenis((lenis) => {
     // called every scroll
   })
 
-  // Désactiver la restauration automatique du scroll lors d'un reload
-  // Cela permet au navigateur de revenir en haut naturellement lors d'un reload
   useEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
     }
   }, [])
 
-  const navigationInfo = useNavigationDetection()
+  const navigationInfo = useNavigationInfo()
   useGSAP(() => {
     const navType = navigationInfo.navigationType
     const currentPage = navigationInfo.currentPage
@@ -114,28 +111,33 @@ export default function RootLayout({ children }) {
 
 },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
-  
+  return (
+    <ProjectProvider>
+      <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
+      <Canvas 
+        style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
+        gl={async (props) => {
+          const renderer = new WebGPURenderer(props)
+          await renderer.init()
+          return renderer
+        }}
+      >
+        <Refraction />
+      </Canvas>
+      <Stats />
+      <span className="lateralBar"></span>  
+      {children}
+    </ProjectProvider>
+  )
+}
+
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${parasitype.variable} ${courierNew.variable}`}
-      >
-        <ProjectProvider>
-          <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
-          <Canvas 
-          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
-              gl={async (props) => {
-              const renderer = new WebGPURenderer(props)
-              await renderer.init()
-              return renderer
-            }}>
-              <Refraction />
-              <ProjectImage />
-         </Canvas>
-         <Stats />
-          <span className="lateralBar"></span>  
-          {children}
-        </ProjectProvider>
+      <body className={`${parasitype.variable} ${courierNew.variable}`}>
+        <NavigationProvider>
+          <LayoutBody>{children}</LayoutBody>
+        </NavigationProvider>
       </body>
     </html>
   );

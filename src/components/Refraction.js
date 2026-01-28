@@ -11,7 +11,7 @@ import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureRow from "@/hooks/useDataTextureRow";
 import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
-import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { useProjectHomeActive, useProjectCount } from '@/contexts/ProjectContext';
 import { useLenis } from 'lenis/react';
 
@@ -28,8 +28,8 @@ export default function Refraction(){
     const { size } = useThree()
     const aspect = size.width / size.height
     
-    // Navigation detection via hook personnalisé
-    const navigationInfo = useNavigationDetection()
+    // Navigation partagée via le contexte
+    const navigationInfo = useNavigationInfo()
     
     // Accès à l'instance Lenis pour le scroll
     const lenis = useLenis()
@@ -142,11 +142,11 @@ export default function Refraction(){
 
     useGSAP(() => {
         if(((navigationInfo.currentPage == "/" || navigationInfo.currentPage == null) && projectHomeActive == "redirectProject")){
-            gsap.to(uniforms.PROGRESS_PROJECT, {value: projectHomeActive == "redirectProject" ? 1 : 0, duration: 1, ease: "linear", delay: 1})
+            gsap.to(uniforms.PROGRESS_PROJECT, {value: 1, duration: 1, ease: "linear"})
         }
     },[projectHomeActive,navigationInfo.currentPage])
 
-    useGSAP(() => {
+/*     useGSAP(() => {
         if(count == 5){
             optionsColors.colorsNext[0].set('#949494')
             optionsColors.colorsNext[1].set('#EEF13A')
@@ -160,10 +160,10 @@ export default function Refraction(){
                     optionsColors.colorsCurrent[1].set('#EEF13A')
                     optionsColors.colorsCurrent[2].set('#D6516E')
                     uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
-                                }
+                            }
             })
         }
-    },[count])
+    },[count]) */
 
 
 
@@ -344,7 +344,7 @@ export default function Refraction(){
             // Note that we're using _time here, which will make these positions animated
             const x = sin(_time.mul(i.mul(0.75)).add(baseAngle)).mul(0.5)
             const y = cos(_time.mul(2).add(baseAngle.mul(2.5))).mul(1)
-            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.mul(useProgress).add(0.25))))
+            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.mul(useProgress).add(float(0.25).mul(useProgress)))))
         
             // Get a specific color
             const _c = mix(colors.element(i),colorsBis.element(i),transitionProgress)
@@ -473,10 +473,11 @@ export default function Refraction(){
              })
         }
         fragmentMat(materialRef.current)
+
+        console.log("rerender material")
         return materialRef.current;
     },[])
 
-    console.log("rerender")
 
     const planeZ = 1
     const { camera, viewport } = useThree()

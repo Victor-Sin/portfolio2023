@@ -14,7 +14,7 @@ import { gsap } from "gsap";
 import styles from '@/app/page.module.css';
 import { cleanupAnimations } from "@/utils/gsapHelpers";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useNavigationInfo } from "@/contexts/NavigationContext";
 gsap.registerPlugin(ScrollTrigger);
 
 
@@ -25,7 +25,7 @@ export default function ProjectImage(){
     const tlOutRef = useRef(null)
     const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(96,4/3,true );
     const count = useProjectCount()
-    const navigationInfo = useNavigationDetection()
+    const navigationInfo = useNavigationInfo()
 
     const { size } = useThree()
     const aspect = size.width / size.height

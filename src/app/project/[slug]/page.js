@@ -10,7 +10,7 @@ import { gsap } from "gsap";
 import { useProjectSetHomeActive, useProjectSetCount } from '@/contexts/ProjectContext';
 import Navigation from '@/components/UI/Navigation';
 import { animateNav, animateSplitTextChars, animateSplitTextWords, addFadeInOutBlur } from '@/utils/gsapHelpers';
-
+import { useNavigationInfo } from "@/contexts/NavigationContext";
 
 export default function ProjectPage({ params }) {
   // Utiliser use() pour accéder aux params (Next.js 15)
@@ -21,16 +21,16 @@ export default function ProjectPage({ params }) {
   const setCount = useProjectSetCount()
   const tl = useRef(null)
   const tlImages = useRef(null)
+  const navigationInfo = useNavigationInfo()
+  const {contextSafe} = useGSAP()
 
-
-  useGSAP(() => {
- 
+  const animationIn = contextSafe((delay = 2) => {
 
     tl.current = gsap.timeline();
     tl.current.fromTo(`.${styles.projectContent} .${styles.middleLineContainer}`, {
       width: "0%",
     }, {
-      delay: 2,
+      delay: delay,
       width: "100%",
       duration: 1.5,
       ease: "power3.out",
@@ -83,7 +83,7 @@ export default function ProjectPage({ params }) {
     }, {
       width: "100%",
       duration: 1.5,
-      delay: 2,
+      delay: delay,
       ease: "power3.out",
     });
 
@@ -109,7 +109,7 @@ export default function ProjectPage({ params }) {
       opacity: 1,
       filter: "blur(0px)",
       x: 0,
-      duration: .5,
+      duration: 1,
       ease: "power2.out",
       stagger: 0.075,
     }, "<+.35")
@@ -137,13 +137,32 @@ export default function ProjectPage({ params }) {
 
 
 
+ 
+
+  })
+
+
+  useGSAP(() => {
+    const fromProjectPage = navigationInfo.previousPage?.includes('project')
+    const toProjectPage = navigationInfo.currentPage?.includes('project')
+ 
+    if(!(fromProjectPage && toProjectPage)){
+      console.log("not navigate project page")
+      console.log(navigationInfo.navigationType)
+      if(navigationInfo.navigationType === 'navigate'){
+        animationIn(0)
+      }
+      else{
+        animationIn(2)
+      }
+    }
+ 
+
     return () => {
       tl.current.kill()
       tlImages.current.kill()
     }
-
-
-  },[])
+  },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
   function handleClick(id) {
       // Accélérer la réversion en x2 ou x3

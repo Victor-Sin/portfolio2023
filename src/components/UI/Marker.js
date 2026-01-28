@@ -22,6 +22,7 @@ export default function Marker() {
   const infosRef = useRef(null);
   const buttonRef = useRef(null);
   const router = useRouter();
+  const {contextSafe} = useGSAP()
 
   
   // Trouver le projet actuel basé sur le count
@@ -263,6 +264,42 @@ export default function Marker() {
     };
   }, []);
 
+  const handleClick = contextSafe(() => {
+    setProjectHomeActive("redirectProject")
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        router.push(`/project/test`)
+        setProjectHomeActive(null)
+      }
+    })
+
+    addFadeInOutBlur(tl);
+    tl
+      .fadeOutBlur(`.${styles.nameProject}`, { x: -20,duration:1 })
+      .fadeOutBlur(`.${styles.headStatic}`, { x: 20, position: "<+.15",duration:1 })
+      .fadeOutBlur(`.${styles.infosContent}`, { x: -10, position: "<+.05",duration:1 })
+      .fadeOutBlur(`.${styles.type}`, { x: 10, position: "<",duration:1 })
+      .fadeOutBlur(`.${styles.projets} .${styles.counter}`, { x: 0, position: "<", scaleYBase: 1, scaleYEnd: 0.25,duration:1 })
+      .to(`.${styles.buttonContainer} button span`,{
+        transform: 'translateY(-100%)',
+        duration: .5,
+        ease: "power2.out",
+      }, "<+.35")
+      .to(`.${styles.buttonContainer}`, {
+        width: '0%',
+        duration: .33,
+        ease: "power2.out",
+      }, "<+.25")
+      .to(`.${styles.buttonContainer}`,{
+        opacity: 0,
+        filter: 'blur(0px)',
+        duration: 0.5,
+        ease: "power2.out",
+      },"<")
+
+  })
+
 
   return <>
   <p className={styles.nameProject}> VICTOR SIN</p>
@@ -308,13 +345,7 @@ export default function Marker() {
 
 
     <div className={styles.buttonContainer}>
-    <button ref={buttonRef} onClick={() =>{
-            setProjectHomeActive("redirectProject")
-            setTimeout(() => {
-              router.push(`/project/test`)
-              setProjectHomeActive(null)
-            }, 2000)
-         }}>        
+    <button ref={buttonRef} onClick={handleClick}>        
          <span>LEARN MORE</span>
       </button>
     </div>

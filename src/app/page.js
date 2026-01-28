@@ -5,13 +5,13 @@ import HeroSection from "@/components/UI/HeroSection";
 import HomeSection from "@/components/UI/HomeSection";
 import AboutSection from "@/components/UI/AboutSection";
 import Marker from "@/components/UI/Marker";
-import useNavigationDetection from "@/hooks/useNavigationDetection";
+import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 export default function Home() {
 
-  const navigationInfo = useNavigationDetection()
+  const navigationInfo = useNavigationInfo()
     useGSAP(() => {
       const navType = navigationInfo.navigationType
       const currentPage = navigationInfo.currentPage
