@@ -125,7 +125,6 @@ function LayoutBody({ children }) {
         <Refraction />
         <ProjectImage/>
       </Canvas>
-      <Stats />
       <span className="lateralBar"></span>  
       {children}
     </ProjectProvider>

@@ -489,16 +489,12 @@ export default function Refraction(){
         uniforms.MOUSE_POSITION.value.x = pointer.x ;
         uniforms.MOUSE_POSITION.value.y = pointer.y;
         updateTexture({x: pointer.x, y: pointer.y})
-        
-        glassWallRef.current.visible = false;
-        gl.setRenderTarget(mainRenderTarget);
-        gl.render(scene, camera);
 
-
-        // Pass the texture data to our shader material
-        gl.setRenderTarget(null);
-        // Show the mesh
-        glassWallRef.current.visible = true;
+        // Keep FBO size in sync with canvas to avoid WebGPU "Attachments have differing sizes"
+        if (mainRenderTarget.width !== size.width || mainRenderTarget.height !== size.height) {
+            mainRenderTarget.setSize(size.width, size.height);
+        }
+    
     })
 
     return (

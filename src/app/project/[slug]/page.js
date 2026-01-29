@@ -11,14 +11,16 @@ import { useProjectSetHomeActive, useProjectSetCount } from '@/contexts/ProjectC
 import Navigation from '@/components/UI/Navigation';
 import { animateNav, animateSplitTextChars, animateSplitTextWords, addFadeInOutBlur } from '@/utils/gsapHelpers';
 import { useNavigationInfo } from "@/contexts/NavigationContext";
+import useMediaQuery from "@/hooks/useMediaQuery"
 
 export default function ProjectPage({ params }) {
-  // Utiliser use() pour accéder aux params (Next.js 15)
+  const isMobile = useMediaQuery(768)  // < 768px
   const { slug } = use(params)
   const router = useRouter()
   const setProjectHomeActive = useProjectSetHomeActive()
   const project = findProjectBySlug(slug, projectsData.projects)
   const setCount = useProjectSetCount()
+  const haveBeenAnimate = useRef(false)
   const tl = useRef(null)
   const tlImages = useRef(null)
   const navigationInfo = useNavigationInfo()
@@ -39,8 +41,8 @@ export default function ProjectPage({ params }) {
       duration: 0.75,
       blur: 5,
       scaleYStart: 1,
-      gapStart: "5rem",
-      gapEnd: "5rem",
+      gapStart: isMobile ? "3rem" : "5rem",
+      gapEnd: isMobile ? "3.5rem" : "5rem",
       delay: 0,
       ease: "linear",
       timeline: tl.current,
@@ -81,7 +83,7 @@ export default function ProjectPage({ params }) {
     tlImages.current.fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
       width: "0%",
     }, {
-      width: "100%",
+      width: isMobile ? "100vw" : "100%",
       duration: 1.5,
       delay: delay,
       ease: "power3.out",
@@ -146,7 +148,8 @@ export default function ProjectPage({ params }) {
     const fromProjectPage = navigationInfo.previousPage?.includes('project')
     const toProjectPage = navigationInfo.currentPage?.includes('project')
  
-    if(!(fromProjectPage && toProjectPage)){
+    if(!(fromProjectPage && toProjectPage) && !haveBeenAnimate.current){
+      haveBeenAnimate.current = true
       console.log("not navigate project page")
       console.log(navigationInfo.navigationType)
       if(navigationInfo.navigationType === 'navigate'){
@@ -159,6 +162,7 @@ export default function ProjectPage({ params }) {
  
 
     return () => {
+      haveBeenAnimate.current = false
       tl.current.kill()
       tlImages.current.kill()
     }
@@ -187,6 +191,9 @@ export default function ProjectPage({ params }) {
 
   return (
     <div className={styles.projectPage}>
+      <div className={`${styles.mobileClock} ${styles.date}`}>
+        <Clock></Clock>
+      </div>
       <div className={styles.projectContent}>
         <Navigation 
           variant="project" 
