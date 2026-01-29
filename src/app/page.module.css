@@ -550,11 +550,14 @@
 .about{
     position: absolute;
     bottom: 0;
-    height: 37.5em;
+    height: auto;
     width: 100%;
     pointer-events: none;
     mix-blend-mode: color-burn;
-
+    @media (max-width: 768px) {
+        display: flex;
+        flex-direction: column;
+    }
     & nav {
         position: relative;
         margin-top: 4em;
@@ -562,6 +565,10 @@
         display: flex;
         justify-content: flex-start;
         pointer-events: all;
+        @media (max-width: 768px) {
+            order: 1;
+            margin-left: 3.5rem;
+        }
         & h3 {
             font-size: 1em;
             font-weight: bold;
@@ -576,7 +583,7 @@
             list-style: none;
             gap: 5em;
             position: relative;
-            font-size: 16px;
+      
             &::before {
                 content: "(X)";
                 position: absolute;
@@ -584,6 +591,10 @@
                 left: -6em;
                 font-size: 1rem;
                 font-weight: bold;
+                @media (max-width: 768px) {
+                    left: -1.25rem;
+                    top : -2.5rem;
+                }
             }
             & li {
                 position: relative;
@@ -641,11 +652,21 @@
         top:0;
         right: 2rem;
         font-family: var(--font-parasitype);
-        font-size: 125px;
+        font-size: clamp(40px, 7.5svw, 125px);
         font-weight: 500;
         text-align: center;
         margin: 0 auto;
         transform: translateY(-25%);
+        @media (max-width: 768px) {
+            order: 3;
+            position: relative;
+            align-self: flex-end;
+            margin-right: 1.5rem;
+            right: 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            transform: translateY(0);
+        }
     }
 
     & .lineContainer{
@@ -653,11 +674,18 @@
         display: inline-block;
         margin-left: -1.25rem;
         margin-top: 1.75em;
-        width: 100%;
-        height: 20px;
-        overflow: hidden;
+        width: calc(100% + 1.25rem);
+        @media (max-width: 768px) {
+            order: 2;
+            margin-left: -1.25rem;
+            margin-bottom: 1.25rem;
+            margin-top: 1.75rem;
+        }
         & .middleLine {
-            position: relative;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
             display: inline-block;
             height: 1px;
             width: 100svw;
@@ -665,19 +693,29 @@
             background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23423f28' stroke-width='4' stroke-dasharray='4%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
         }
     }
+
+
    
 
     & .aboutContent {
         font-size: 1rem;
         margin-left: 3.5em;
         margin-top: 2.5em;
+        margin-bottom: 8rem;
         text-transform: uppercase;
         pointer-events: none;
+        line-height: 1.25;
+        @media (max-width: 768px) {
+            margin-left: 2.5rem;
+            margin-bottom: 10rem;
+            order: 4;
+        }
         & > ul {
             list-style: none;
             display: flex;
             flex-direction: column;
             gap: 1.5em;
+            max-width: 70%;
             & > ul {
                 list-style: none;
                 max-width: 25em;
@@ -693,6 +731,9 @@
             pointer-events: none;
             max-width: 45%;
             font-weight: bold;
+            @media (max-width: 768px) {
+                max-width: calc(100% - 3.5rem);
+            }
         }
    
     }
@@ -701,7 +742,7 @@
         align-items: center;
         gap: 0.5em;
         position: absolute;
-        bottom: 2rem;
+        bottom: 1.5rem;
         left: 3.5em;
         font-size: 1rem;
         margin-top: 2em;
@@ -720,6 +761,9 @@
         text-transform: uppercase;
         pointer-events: none;
         transform: translateX(50%);
+        @media (max-width: 768px) {
+            display: none;  
+        }
     }
     & .date {
         position: absolute;
@@ -737,6 +781,9 @@
         width: 22.5em;
         margin-left: -1.5em;
         transform: translateY(-5em);
+        @media (max-width: 768px) {
+            width: 20em;
+        }
         &::after {
             content: "";
             position: absolute;

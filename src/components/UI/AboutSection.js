@@ -7,10 +7,13 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { animateSplitTextChars, animateSplitTextWords, animateNav, cleanupAnimations } from '@/utils/gsapHelpers';
 import Navigation from '@/components/UI/Navigation';
-
+import useMediaQuery from "@/hooks/useMediaQuery"
 gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutSection() {
+  const isMobile = useMediaQuery(768)  // < 768px
+
+
   useGSAP(() => {
     const navTimeline = gsap.timeline({
       scrollTrigger: {
@@ -26,9 +29,9 @@ export default function AboutSection() {
       duration: 0.75,
       delay: 2,
       blur: 5,
-      scaleYStart: 0.5,
-      gapStart: "5rem",
-      gapEnd: "5rem",
+      scaleYStart: isMobile ? 1 : 0.5,
+      gapStart: isMobile ? "3rem" : "5rem",
+      gapEnd: isMobile ? "3.5rem" : "5rem",
       ease: "linear",
       timeline: navTimeline
     });
@@ -112,7 +115,7 @@ export default function AboutSection() {
           <ul>
             <li>
               <p>- <strong>BACK-END DEVELOPMENT</strong> : PHP ;
-                LARAVEL ; MYSQL ; POSTGRESQL ; NODE.JS ; EXPRESS</p>
+                LARAVEL ; MYSQL ; POSTGRESQL ; NODE.JS</p>
             </li>
           </ul>
         </ul>
