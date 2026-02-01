@@ -37,7 +37,11 @@ export default function ProjectImage(){
         "/images/p5.jpg",
         "/images/p6.jpg",
     ])
-    
+    // Restaurer les couleurs d'origine (sRGB) — sans ça WebGL traite les JPEG en linéaire
+    ;[proj1, proj2, proj3, proj4, proj5, proj6].forEach((tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace
+    })
+
     const textureNoise = useTexture("/images/noise.png")
     textureNoise.wrapT = RepeatWrapping
     textureNoise.wrapS = RepeatWrapping
@@ -246,7 +250,7 @@ export default function ProjectImage(){
         const flowflied = uvFlowField(uv())
         const flowfliedBis = uvFlowField(shadertoyUV)
 
-        const strengthbis =  distance(uv().add(length(flowflied).mul(0.05)), vec2(0.5)).mul(.5);
+        const strengthbis =  distance(uv().add(length(flowflied).mul(0.05)), vec2(0.5)).mul(.35);
         const strength = distance(shadertoyUV, vec2(0.5)).mul(3);
 
         const _grain = grainTextureEffect(flowflied).mul(0.05)
@@ -254,10 +258,10 @@ export default function ProjectImage(){
         const uvTest = flowflied.mul(0.05)
 
         // Récupérer l'alpha de la texture originale
-        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.5)), strength: 0.05}).add(uvTest.mul(2)),null,10)
+        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.25)), strength: 0.0025}).add(uvTest.mul(0.25)),null,2)
         
         // Créer le vec4 final avec l'alpha de la texture originale
-        const finalColor = vec4(blurredColor.rgb.add(_grain), oneMinus(strengthbis).mul(uniforms.OPACITY))
+        const finalColor = vec4(blurredColor.rgb.mul(0.95).add(_grain), oneMinus(strengthbis).mul(uniforms.OPACITY))
         mat.colorNode = finalColor
 
         const position = positionGeometry.add(length(uvTest))
