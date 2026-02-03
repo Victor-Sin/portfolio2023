@@ -121,10 +121,12 @@ function LayoutBody({ children }) {
           await renderer.init()
           return renderer
         }}
+        dpr={1}
       >
         <Refraction />
         <ProjectImage/>
       </Canvas>
+      <Stats />
       <span className="lateralBar"></span>  
       {children}
     </ProjectProvider>

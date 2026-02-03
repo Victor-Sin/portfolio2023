@@ -77,6 +77,7 @@ export default function ProjectImage(){
                 duration: 2 ,
                 ease: "linear"
                })
+ 
     
     
            tlOutRef.current = gsap.timeline({ scrollTrigger: {
@@ -90,6 +91,7 @@ export default function ProjectImage(){
             duration: 2 ,
             ease: "linear"
            })
+
         }
         else{
             if(tlInRef.current && tlOutRef.current){
@@ -250,8 +252,7 @@ export default function ProjectImage(){
         const flowflied = uvFlowField(uv())
         const flowfliedBis = uvFlowField(shadertoyUV)
 
-        const strengthbis =  distance(uv().add(length(flowflied).mul(0.05)), vec2(0.5)).mul(.35);
-        const strength = distance(shadertoyUV, vec2(0.5)).mul(3);
+        const strengthbis =  distance(uv().add(length(flowflied).mul(0.05)), vec2(0.5)).mul(float(uniforms.OPACITY).mul(0.35));
 
         const _grain = grainTextureEffect(flowflied).mul(0.05)
 
