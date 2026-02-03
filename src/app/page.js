@@ -37,7 +37,8 @@ export default function Home() {
         <div className={styles.container}>
           <HeroSection />
           <HomeSection />
-    
+          <Marker />
+          <AboutSection />
         </div>
       </main>
     </div>
