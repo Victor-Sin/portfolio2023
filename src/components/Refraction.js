@@ -24,8 +24,8 @@ export default function Refraction(){
     const mainRenderTarget = useFBO();
     const count = useProjectCount()
     const projectHomeActive = useProjectHomeActive()
-    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(128, 0, false );
-    const { size } = useThree()
+    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(64, 0, false );
+    const { size, gl } = useThree()
     const aspect = size.width / size.height
     
     // Navigation partagée via le contexte
@@ -56,7 +56,8 @@ export default function Refraction(){
             PROGRESS_LOADER: uniform(0),
             PROJECT_COLORS_CURRENT: uniformArray(optionsColors.colorsCurrent),
             PROJECT_COLORS_NEXT: uniformArray(optionsColors.colorsNext),
-
+            // WebGPU: screenUV.y=0 en haut → flip (1-y). WebGL: screenUV.y=0 en bas → pas de flip.
+            FLIP_UV_Y: uniform(1),
         }
     },[])
 
@@ -84,6 +85,12 @@ export default function Refraction(){
             window.removeEventListener("resize", updateAspect);
         };
     }, []);
+
+    useEffect(() => {
+        if (gl?.backend != null) {
+            uniforms.FLIP_UV_Y.value = gl.backend.isWebGLBackend ? 0 : 1;
+        }
+    }, [gl]);
 
     useGSAP(() => {
         const navType = navigationInfo.navigationType
@@ -423,14 +430,14 @@ export default function Refraction(){
         const lastProgress = smoothstep(lastLimits.x, lastLimits.y, uniforms.PROGRESS).toVar()
         const inLastProgress = step(lastLimits.x,uniforms.PROGRESS).sub(step(lastLimits.y,uniforms.PROGRESS));
 
-        // WebGPU flip Y, then convert to Shadertoy-style normalized coords:
-        // normalized = vec2( aspect*(2*uv.x-1), 2*uv.y-1 )
-        const uvWebGPU = vec2( screenUV.x, float( 1.0 ).sub( screenUV.y ) ).toVar();
+        // WebGPU: screenUV.y=0 en haut → on flip (1-y). WebGL: screenUV.y=0 en bas → on garde screenUV.y.
+        const uvY = mix(screenUV.y, float(1.0).sub(screenUV.y), uniforms.FLIP_UV_Y);
+        const uvWebGPU = vec2(screenUV.x, float(1.0).sub(screenUV.y)).toVar();
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const textureCursor = texture(dataTextureStatic, uvWebGPU)
-        const cursor = gaussianBlur(textureCursor,null,2)
+        const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY))
+        const cursor = gaussianBlur(textureCursor,null,1)
         const velocityCursor = cursor.rg
 
         const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );

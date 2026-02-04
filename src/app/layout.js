@@ -1,12 +1,12 @@
 "use client"
 
-import { Geist, Geist_Mono } from "next/font/google";
 import localFont from 'next/font/local'
 import { Canvas } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
@@ -15,6 +15,7 @@ import { Stats } from "@react-three/drei";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import styles from "@/app/page.module.css";
+
 
 const parasitype = localFont({
   variable: "--font-parasitype",
@@ -81,9 +82,11 @@ const courierNew = localFont({
 
 
 function LayoutBody({ children }) {
+  const { forceWebGL, ready } = useForceWebGLBackend()
   const lenis = useLenis((lenis) => {
     // called every scroll
   })
+
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
@@ -114,18 +117,20 @@ function LayoutBody({ children }) {
   return (
     <ProjectProvider>
       <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
-      <Canvas 
-        style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
-        gl={async (props) => {
-          const renderer = new WebGPURenderer(props)
-          await renderer.init()
-          return renderer
-        }}
-        dpr={1}
-      >
-        <Refraction />
-        <ProjectImage/>
-      </Canvas>
+      {ready && (
+        <Canvas 
+          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
+          gl={async (props) => {
+            const renderer = new WebGPURenderer({ ...props, forceWebGL })
+            await renderer.init()
+            return renderer
+          }}
+          dpr={1.25}
+        >
+          <Refraction />
+          <ProjectImage/>
+        </Canvas>
+      )}
       <Stats />
       <span className="lateralBar"></span>  
       {children}

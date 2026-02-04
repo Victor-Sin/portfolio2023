@@ -8,7 +8,7 @@ const WAVE_BASE_HEIGHT = float( 1.25 );
 const WAVE_CHOPPINESS = float( 5. );
 const WAVE_ANIM_SPEED = float( 1.8 );
 const WAVE_FREQUENCY = float( 0.075 );
-const RAYMARCH_STEPS = int( int( 10 ) );
+const RAYMARCH_STEPS = int( int( 2 ) );
 
 const OCTAVE_MATRIX = mat2( 1.6, 1.2, float( - 1.2 ), 1.6 );
 
