@@ -14,11 +14,13 @@ import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { useProjectHomeActive, useProjectCount } from '@/contexts/ProjectContext';
 import { useLenis } from 'lenis/react';
-
+import useMediaQuery from "@/hooks/useMediaQuery"
 import { useGSAP } from '@gsap/react';
 import { gsap } from "gsap";
 
 export default function Refraction(){
+    const isMobile = useMediaQuery(768)  // < 768px
+
     const materialRef = useRef()
     const glassWallRef = useRef()
     const mainRenderTarget = useFBO();
@@ -58,6 +60,8 @@ export default function Refraction(){
             PROJECT_COLORS_NEXT: uniformArray(optionsColors.colorsNext),
             // WebGPU: screenUV.y=0 en haut → flip (1-y). WebGL: screenUV.y=0 en bas → pas de flip.
             FLIP_UV_Y: uniform(1),
+            // 0 sur mobile pour désactiver texture curseur + gaussianBlur (économie FPS au scroll).
+            USE_CURSOR_EFFECT: uniform(1),
         }
     },[])
 
@@ -91,6 +95,10 @@ export default function Refraction(){
             uniforms.FLIP_UV_Y.value = gl.backend.isWebGLBackend ? 0 : 1;
         }
     }, [gl]);
+
+    useEffect(() => {
+        uniforms.USE_CURSOR_EFFECT.value = isMobile ? 0 : 1;
+    }, [isMobile]);
 
     useGSAP(() => {
         const navType = navigationInfo.navigationType
@@ -436,9 +444,13 @@ export default function Refraction(){
         const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
         const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY))
-        const cursor = gaussianBlur(textureCursor,null,1)
-        const velocityCursor = cursor.rg
+        // Sur mobile (USE_CURSOR_EFFECT=0) on skip texture + gaussianBlur pour garder les FPS au scroll.
+        const velocityCursor = vec2(0, 0).toVar();
+        If(uniforms.USE_CURSOR_EFFECT.greaterThan(0), () => {
+            const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY));
+            const cursor = gaussianBlur(textureCursor, null, 1);
+            velocityCursor.assign(cursor.rg);
+        });
 
         const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );
 
@@ -490,19 +502,21 @@ export default function Refraction(){
     const { camera, viewport } = useThree()
     const { width, height } = viewport.getCurrentViewport(camera, [0,0,planeZ])
 
+    const frameCountRef = useRef(0);
     useFrame((state) => {
         const { gl, scene, camera, pointer } = state;
-        update()
-        uniforms.MOUSE_POSITION.value.x = pointer.x ;
-        uniforms.MOUSE_POSITION.value.y = pointer.y;
-        updateTexture({x: pointer.x, y: pointer.y})
-
-        // Keep FBO size in sync with canvas to avoid WebGPU "Attachments have differing sizes"
+        // Sur mobile : mettre à jour le scroll moins souvent pour alléger le main thread pendant le scroll.
+        update();
+       
+        if (!isMobile) {
+            updateTexture({ x: pointer.x, y: pointer.y });
+            uniforms.MOUSE_POSITION.value.x = pointer.x;
+            uniforms.MOUSE_POSITION.value.y = pointer.y;
+        }
         if (mainRenderTarget.width !== size.width || mainRenderTarget.height !== size.height) {
             mainRenderTarget.setSize(size.width, size.height);
         }
-    
-    })
+    });
 
     return (
         <group>

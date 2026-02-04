@@ -30,18 +30,22 @@ export default function HomeSection() {
       blur: 5
     });
 
-    const splitText2 = animateSplitTextWords(`.${styles.home} .${styles.pres} li`, {
-      trigger: `.${styles.home} .${styles.pres}`,
-      toggleActions: 'play none none none',
-      start: '-50% bottom',
-      end: '100% 65%',
-      scrub: true,
-    }, {
-      duration: 0.75,
-      delay: 2,
-      staggerAmount: 1,
-      blur: 5
-    });
+    let splitText2 = null;
+
+    if(!isMobile){
+      splitText2 = animateSplitTextWords(`.${styles.home} .${styles.pres} li`, {
+        trigger: `.${styles.home} .${styles.pres}`,
+        toggleActions: 'play none none none',
+        start: '-50% bottom',
+        end: '100% 65%',
+        scrub: true,
+      }, {
+        duration: 0.75,
+        delay: 2,
+        staggerAmount: 1,
+        blur: 5
+      });
+    }
 
     const navResult = animateNav(`.${styles.home} nav ul`, {
       trigger: `.${styles.container}`,

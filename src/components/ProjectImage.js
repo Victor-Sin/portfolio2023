@@ -15,10 +15,12 @@ import styles from '@/app/page.module.css';
 import { cleanupAnimations } from "@/utils/gsapHelpers";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
+import useMediaQuery from "@/hooks/useMediaQuery";
 gsap.registerPlugin(ScrollTrigger);
 
 
 export default function ProjectImage(){
+    const isMobile = useMediaQuery(768)  // < 768px
     const materialRef = useRef()
     const glassWallRef = useRef()
     const tlInRef = useRef(null)
@@ -56,7 +58,7 @@ export default function ProjectImage(){
             MOUSE_POSITION: uniform(new Vector2(0,0)),
             VELOCITY: uniform(0),
             COUNT: uniform(count),
-            OPACITY: uniform(0)
+            OPACITY: uniform(0),
         }
     },[])
 
@@ -259,7 +261,7 @@ export default function ProjectImage(){
         const uvTest = flowflied.mul(0.05)
 
         // Récupérer l'alpha de la texture originale
-        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.25)), strength: 0.0025}).add(uvTest.mul(0.25)),null,2)
+        const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.25)), strength: 0.0025}).add(uvTest.mul(0.25)), null, isMobile ? 1 : 2)
         
         // Créer le vec4 final avec l'alpha de la texture originale
         const finalColor = vec4(blurredColor.rgb.mul(0.95).add(_grain), oneMinus(strengthbis).mul(uniforms.OPACITY))
@@ -281,7 +283,7 @@ export default function ProjectImage(){
         }
         fragmentMat(materialRef.current)
         return materialRef.current;
-    },[count])
+    },[count, isMobile])
 
     const planeZ = 1.5
     const scale = 3;
@@ -292,13 +294,15 @@ export default function ProjectImage(){
         const { gl, scene, camera, pointer } = state;
   /*       uniforms.MOUSE_POSITION.value.x = pointer.x ;
         uniforms.MOUSE_POSITION.value.y = pointer.y; */
-        updateTexture({x: uniforms.MOUSE_POSITION.value.x, y: uniforms.MOUSE_POSITION.value.y })
+        if(!isMobile){
+            updateTexture({x: uniforms.MOUSE_POSITION.value.x, y: uniforms.MOUSE_POSITION.value.y })
+        }
 
     })
 
     const handleMove = (e) => {
         const intersection = e.intersections[0]
-        if(intersection){
+        if(intersection && !isMobile){
             uniforms.MOUSE_POSITION.value.x = intersection.uv.x ;
             uniforms.MOUSE_POSITION.value.y =  intersection.uv.y;
         }

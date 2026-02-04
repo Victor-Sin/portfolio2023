@@ -49,8 +49,11 @@ export default function AboutSection() {
         end: 'top 50%',
       }
     });
+    let splitTextPres = null;
+    let splitTextAbout = null;
+    if(!isMobile){
 
-    const splitTextPres = animateSplitTextWords(`.${styles.presentation}`, {
+    splitTextPres = animateSplitTextWords(`.${styles.presentation}`, {
       trigger: `.${styles.presentation}`,
       toggleActions: 'play none none none',
       start: '-0% bottom',
@@ -63,7 +66,8 @@ export default function AboutSection() {
       blur: 5
     });
 
-    const splitTextAbout = animateSplitTextWords(`.${styles.aboutContent} li p`, {
+
+      splitTextAbout = animateSplitTextWords(`.${styles.aboutContent} li p`, {
       trigger: `.${styles.aboutContent} ul`,
       toggleActions: 'play none none none',
       start: '-100% 80%',
@@ -75,7 +79,7 @@ export default function AboutSection() {
       staggerAmount: 1,
       blur: 5
     });
-
+  }
     return () => {
       cleanupAnimations([
         { timeline: navTimeline, scrollTrigger: navTimeline.scrollTrigger },
@@ -84,7 +88,7 @@ export default function AboutSection() {
         splitTextAbout
       ]);
     };
-  }, [])
+  }, [isMobile])
 
   return (
     <section className={styles.about} id="about">

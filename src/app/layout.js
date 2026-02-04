@@ -7,6 +7,7 @@ import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
 import { useEffect, useState } from 'react'
 import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
+import useMediaQuery from "@/hooks/useMediaQuery";
 import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
@@ -83,6 +84,7 @@ const courierNew = localFont({
 
 function LayoutBody({ children }) {
   const { forceWebGL, ready } = useForceWebGLBackend()
+  const isMobile = useMediaQuery(768)
   const lenis = useLenis((lenis) => {
     // called every scroll
   })
@@ -117,15 +119,16 @@ function LayoutBody({ children }) {
   return (
     <ProjectProvider>
       <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
+      <div className={styles.canvasContainer}>
       {ready && (
         <Canvas 
-          style={{position: "fixed", top: 0, left: 0, width: "100svw", height: "100svh", background: "black", zIndex: 0}}
+          style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
           gl={async (props) => {
             const renderer = new WebGPURenderer({ ...props, forceWebGL })
             await renderer.init()
             return renderer
           }}
-          dpr={1.25}
+          dpr={isMobile ? 1 : 1.25}
         >
           <Refraction />
           <ProjectImage/>
@@ -134,6 +137,7 @@ function LayoutBody({ children }) {
       <Stats />
       <span className="lateralBar"></span>  
       {children}
+      </div>
     </ProjectProvider>
   )
 }

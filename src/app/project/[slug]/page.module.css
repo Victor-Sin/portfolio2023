@@ -1,7 +1,7 @@
 .projectPage{
     position: relative;
     width: 100svw;
-    min-height: 100svh;
+    min-height: 100lvh;
     font-family: var(--font-courier-new);
     color: #423f28;
     /* mix-blend-mode crée un nouveau stacking context - doit être sur le conteneur principal */
@@ -28,7 +28,7 @@
         top: 0;
         left: 0;
         width: calc(65% - 1.75rem); /* 60% de la largeur moins la moitié du gap */
-        height: 100svh;
+        height: 100lvh;
         /* Hérite de pointer-events: none du parent */
         mix-blend-mode: color-burn;
 
@@ -206,7 +206,7 @@
         width: calc(100% - 65% - 1.75rem);
         margin-left: calc(65% + 1.75rem);
         display: inline-block;
-        min-height: 100svh;
+        min-height: 100lvh;
         & .head {
             margin: 1.5em 2.5em;
             text-align: right;
