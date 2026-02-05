@@ -1,543 +1,553 @@
 "use client"
 
-import {useFBO, useTexture} from "@react-three/drei";
-import {useMemo, useRef, useEffect, useCallback, useState} from "react";
-import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
+// ============================================================
+// IMPORTS
+// ============================================================
+
+// React
+import { useMemo, useRef, useEffect, useCallback } from "react";
+
+// Three.js
+import { DoubleSide, Color, Vector2 } from "three";
 import * as THREE from 'three/webgpu'
-import {useFrame, useThree} from "@react-three/fiber";
-import {screenUV,screenCoordinate,time,array,texture, float,distance,log,PI,uniformArray,div,min,oneMinus, int, uniform, Fn,max, clamp, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
-import { computeLineColor } from "@/utils/Lines";
-import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import useDataTextureRow from "@/hooks/useDataTextureRow";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useFBO } from "@react-three/drei";
+
+// Three.js TSL
+import {
+    screenUV, screenCoordinate, time, array, texture, float, distance, log, PI,
+    uniformArray, div, min, oneMinus, int, uniform, Fn, max, mat2, vec3, sin, cos,
+    vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If,
+    normalize, fwidth, step, vec4, smoothstep, length, add, rotate, mx_noise_float
+} from 'three/tsl';
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+
+// Hooks & Contexts
 import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
-import { useProjectHomeActive, useProjectCount } from '@/contexts/ProjectContext';
+import { useProjectHomeActive } from '@/contexts/ProjectContext';
 import { useLenis } from 'lenis/react';
-import useMediaQuery from "@/hooks/useMediaQuery"
+import useMediaQuery from "@/hooks/useMediaQuery";
+
+// Animation
 import { useGSAP } from '@gsap/react';
 import { gsap } from "gsap";
 
-export default function Refraction(){
-    const isMobile = useMediaQuery(768)  // < 768px
+// ============================================================
+// COMPOSANT PRINCIPAL
+// ============================================================
 
-    const materialRef = useRef()
-    const glassWallRef = useRef()
+export default function Refraction() {
+    
+    // --------------------------------------------------------
+    // HOOKS & REFS
+    // --------------------------------------------------------
+    
+    const isMobile = useMediaQuery(768);
+    const materialRef = useRef();
+    const glassWallRef = useRef();
     const mainRenderTarget = useFBO();
-    const count = useProjectCount()
-    const projectHomeActive = useProjectHomeActive()
-    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(64, 0, false );
-    const { size, gl } = useThree()
-    const aspect = size.width / size.height
     
-    // Navigation partagée via le contexte
-    const navigationInfo = useNavigationInfo()
+    const { dataTexture: dataTextureStatic, updateTexture, textureVersion } = useDataTextureStatic(64, 0, false);
+    const { size, gl, camera, viewport } = useThree();
     
-    // Accès à l'instance Lenis pour le scroll
-    const lenis = useLenis()
+    const navigationInfo = useNavigationInfo();
+    const projectHomeActive = useProjectHomeActive();
+    const lenis = useLenis();
 
-    const optionsColors = useMemo(() => {
-        return {
-            colorsCurrent: [new Color('#76869B'), new Color('#AAA97F'), new Color('#F39089')],
-            colorsNext: [new Color('#9E4DCE'), new Color('#E9EB7D'), new Color('#E6D3A4')],
-        }
-    },[])
- 
-    
-    const textureNoise = useTexture("/images/noise2.png")
-    textureNoise.wrapT = RepeatWrapping
-    textureNoise.wrapS = RepeatWrapping
+    // --------------------------------------------------------
+    // UNIFORMS & COLORS
+    // --------------------------------------------------------
 
-    const uniforms = useMemo(() => {
-        return {
-            ASPECT: uniform(aspect),
-            PROGRESS: uniform(0),
-            MOUSE_POSITION: uniform(new Vector2(0,0)),
-            PROGRESS_PROJECT: uniform(0),
-            PROGRESS_PROJECT_TRANSITION: uniform(0),
-            PROGRESS_LOADER: uniform(0),
-            PROJECT_COLORS_CURRENT: uniformArray(optionsColors.colorsCurrent),
-            PROJECT_COLORS_NEXT: uniformArray(optionsColors.colorsNext),
-            // WebGPU: screenUV.y=0 en haut → flip (1-y). WebGL: screenUV.y=0 en bas → pas de flip.
-            FLIP_UV_Y: uniform(1),
-            // 0 sur mobile pour désactiver texture curseur + gaussianBlur (économie FPS au scroll).
-            USE_CURSOR_EFFECT: uniform(1),
-        }
-    },[])
+    const optionsColors = useMemo(() => ({
+        colorsCurrent: [new Color('#76869B'), new Color('#AAA97F'), new Color('#F39089')],
+        colorsNext: [new Color('#9E4DCE'), new Color('#E9EB7D'), new Color('#E6D3A4')],
+    }), []);
 
-    function updateAspect(e){
-        if(e){
-            uniforms.ASPECT.value = e.target.innerWidth / e.target.innerHeight;
-        }else{
-            uniforms.ASPECT.value = size.width / size.height;
-        }
-    }
+    const uniforms = useMemo(() => ({
+        ASPECT: uniform(size.width / size.height),
+        PROGRESS: uniform(0),
+        MOUSE_POSITION: uniform(new Vector2(0, 0)),
+        PROGRESS_PROJECT: uniform(0),
+        PROGRESS_PROJECT_TRANSITION: uniform(0),
+        PROGRESS_LOADER: uniform(0),
+        PROJECT_COLORS_CURRENT: uniformArray(optionsColors.colorsCurrent),
+        PROJECT_COLORS_NEXT: uniformArray(optionsColors.colorsNext),
+        FLIP_UV_Y: uniform(1),           // WebGPU: flip Y, WebGL: no flip
+        USE_CURSOR_EFFECT: uniform(1),   // 0 sur mobile pour économiser les FPS
+    }), []);
 
-    const onUpdateCallback = useCallback(({ progress,velocity }) => {
+    // --------------------------------------------------------
+    // CALLBACKS & EFFECTS
+    // --------------------------------------------------------
+
+    const updateAspect = useCallback((e) => {
+        uniforms.ASPECT.value = e 
+            ? e.target.innerWidth / e.target.innerHeight 
+            : size.width / size.height;
+    }, [uniforms, size]);
+
+    const onScrollUpdate = useCallback(({ progress }) => {
         uniforms.PROGRESS.value = progress;
     }, [uniforms]);
-  
-    // Hook: update uniforms.PROGRESS with normalized scroll and keep resize -> aspect
-    const {  update } = useScrollProgress({
-        onUpdate: onUpdateCallback
-    },0, true);
 
+    const { update: updateScroll } = useScrollProgress({ onUpdate: onScrollUpdate }, 0, true);
+
+    // Resize listener
     useEffect(() => {
         updateAspect();
         window.addEventListener("resize", updateAspect, { passive: true });
-        return () => {
-            window.removeEventListener("resize", updateAspect);
-        };
-    }, []);
+        return () => window.removeEventListener("resize", updateAspect);
+    }, [updateAspect]);
 
+    // Détection WebGL/WebGPU pour flip UV
     useEffect(() => {
-        if (gl?.backend != null) {
+        if (gl?.backend) {
             uniforms.FLIP_UV_Y.value = gl.backend.isWebGLBackend ? 0 : 1;
         }
-    }, [gl]);
+    }, [gl, uniforms]);
 
+    // Désactiver effet curseur sur mobile
     useEffect(() => {
         uniforms.USE_CURSOR_EFFECT.value = isMobile ? 0 : 1;
-    }, [isMobile]);
+    }, [isMobile, uniforms]);
+
+    // --------------------------------------------------------
+    // ANIMATIONS GSAP - NAVIGATION
+    // --------------------------------------------------------
 
     useGSAP(() => {
-        const navType = navigationInfo.navigationType
-        const currentPage = navigationInfo.currentPage
-        const previousPage = navigationInfo.previousPage
+        const { navigationType: navType, currentPage, previousPage } = navigationInfo;
 
-        
-        
-        if(navType === 'reload' || navType === 'external'){
-            // Le scroll revient automatiquement en haut grâce à scrollRestoration: 'manual' dans layout.js
-            
-            if(currentPage.includes('project')){
-                gsap.set(uniforms.PROGRESS_PROJECT, {value: 1})
-            }
-            else if(currentPage === '/'){
-                gsap.set(uniforms.PROGRESS_PROJECT, {value: 0})
-            }
-            gsap.fromTo(uniforms.PROGRESS_LOADER, {value: 0}, {
-                value: 1,
-                duration: 1,
-                ease: "linear",
-                delay: 1,
-            })
-  
-            // ANIMATION D'ARRIVER SITE GLOBALE
-        }
-        else if(navType === 'back' || navType === 'forward'){
-            // Si on arrive sur une page project, remettre le scroll en haut
+        if (navType === 'reload' || navType === 'external') {
+            // Initial load
+            gsap.set(uniforms.PROGRESS_PROJECT, { 
+                value: currentPage.includes('project') ? 1 : 0 
+            });
+            gsap.fromTo(uniforms.PROGRESS_LOADER, 
+                { value: 0 }, 
+                { value: 1, duration: 1, ease: "linear", delay: 1 }
+            );
+        } 
+        else if (navType === 'back' || navType === 'forward') {
+            // Navigation historique
             if (currentPage.includes('project')) {
-                if (lenis) {
-                    lenis.scrollTo(0, { immediate: true, duration: 0 })
-                } else if (typeof window !== 'undefined') {
-                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-                }
+                lenis?.scrollTo(0, { immediate: true, duration: 0 }) 
+                    ?? window.scrollTo({ top: 0, behavior: 'instant' });
             }
-            
-            const isProjectPage = previousPage.includes('project')
-            gsap.to(uniforms.PROGRESS_PROJECT, 
-                {
-                    value: isProjectPage ? 0 : 1, 
-                    duration: 1, 
-                    ease: "linear", 
-                    delay: 1
-                }
-            )
+            gsap.to(uniforms.PROGRESS_PROJECT, {
+                value: previousPage.includes('project') ? 0 : 1,
+                duration: 1, ease: "linear", delay: 1
+            });
+        } 
+        else if (navType === 'navigate' && !currentPage.includes('project')) {
+            // Retour à home
+            gsap.to(uniforms.PROGRESS_LOADER, { value: 1, duration: 1, ease: "linear", delay: 1 });
+            gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 1, ease: "power2.out", delay: 1 });
         }
-        else if(navType === 'navigate' && !currentPage.includes('project')){
-            gsap.to(uniforms.PROGRESS_LOADER, {
-                value: 1,
-                duration: 1,
-                ease: "linear",
-                delay: 1,
-            })
-            gsap.to(uniforms.PROGRESS_PROJECT, {value: 0, duration: 1, ease: "power2.out", delay: 1})
-        }
-
-    },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
+    }, [navigationInfo.navigationType, navigationInfo.currentPage, navigationInfo.previousPage]);
 
     useGSAP(() => {
-        if(((navigationInfo.currentPage == "/" || navigationInfo.currentPage == null) && projectHomeActive == "redirectProject")){
-            gsap.to(uniforms.PROGRESS_PROJECT, {value: 1, duration: 1, ease: "linear"})
+        const isHome = navigationInfo.currentPage === "/" || navigationInfo.currentPage == null;
+        if (isHome && projectHomeActive === "redirectProject") {
+            gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 1, ease: "linear" });
         }
-    },[projectHomeActive,navigationInfo.currentPage])
+    }, [projectHomeActive, navigationInfo.currentPage]);
 
-/*     useGSAP(() => {
-        if(count == 5){
-            optionsColors.colorsNext[0].set('#949494')
-            optionsColors.colorsNext[1].set('#EEF13A')
-            optionsColors.colorsNext[2].set('#D6516E')
+    // ============================================================
+    // FONCTIONS SHADER TSL - OCEAN LINES
+    // ============================================================
 
+    // Constantes ocean
+    const WAVE_CONFIG = {
+        DISTANCE_BETWEEN_LINES: float(0.15),
+        GEO_ITERATIONS: int(2),
+        BASE_HEIGHT: float(1.25),
+        CHOPPINESS: float(5),
+        ANIM_SPEED: float(1.8),
+        FREQUENCY: float(0.075),
+        RAYMARCH_STEPS: int(2),
+        OCTAVE_MATRIX: mat2(1.6, 1.2, float(-1.2), 1.6),
+    };
 
+    const animatedWaveTime = Fn(() => 
+        add(1.0, time.mul(WAVE_CONFIG.ANIM_SPEED))
+    );
 
-            gsap.timeline().to(uniforms.PROGRESS_PROJECT_TRANSITION, {value: 1, duration: 1, ease: "linear", delay: 1, 
-                onComplete: () => {
-                    optionsColors.colorsCurrent[0].set('#949494')
-                    optionsColors.colorsCurrent[1].set('#EEF13A')
-                    optionsColors.colorsCurrent[2].set('#D6516E')
-                    uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
-                            }
-            })
-        }
-    },[count]) */
+    // MaterialX Perlin noise optimisé (évite les appels sin() coûteux)
+    const perlinNoise = Fn(([p_immutable]) => mx_noise_float(vec2(p_immutable)));
 
-
-
-    const grainTextureEffect = Fn(([_uv]) => {
-        return fract(sin(dot(_uv, vec2(12.9898, 78.233))).mul(43758.5453123))
-      })
-    
-
-    const partionProgress = Fn(([progress_ref,partition_sequence,lengthPartition]) => {
-        const sequenceIndex = float(0).toVar()
-        Loop({start: int(0), end: lengthPartition}, ({i}) => {
-            sequenceIndex.addAssign(step(partition_sequence.element(float(i).add(float(1))), progress_ref))
-        })
-        const segmentStart = partition_sequence.element(sequenceIndex);
-        const segmentEnd = partition_sequence.element(sequenceIndex.add(float(1)));
-        const localProgress = smoothstep(segmentStart, segmentEnd, progress_ref);
+    const createRotationMatrix = Fn(([eulerAngles_immutable]) => {
+        const angles = vec3(eulerAngles_immutable).toVar();
+        const scX = vec2(sin(angles.x), cos(angles.x)).toVar();
+        const scY = vec2(sin(angles.y), cos(angles.y)).toVar();
+        const scZ = vec2(sin(angles.z), cos(angles.z)).toVar();
+        const m = mat3().toVar();
         
-        return vec2(localProgress,sequenceIndex)
-    })
+        m.element(int(0)).assign(vec3(
+            scX.y.mul(scZ.y).add(scX.x.mul(scY.x).mul(scZ.x)),
+            scX.y.mul(scY.x).mul(scZ.x).add(scZ.y.mul(scX.x)),
+            scY.y.negate().mul(scZ.x)
+        ));
+        m.element(int(1)).assign(vec3(
+            scY.y.negate().mul(scX.x),
+            scX.y.mul(scY.y),
+            scY.x
+        ));
+        m.element(int(2)).assign(vec3(
+            scZ.y.mul(scX.x).mul(scY.x).add(scX.y.mul(scZ.x)),
+            scX.x.mul(scZ.x).sub(scX.y.mul(scZ.y).mul(scY.x)),
+            scY.y.mul(scZ.y)
+        ));
+        return m;
+    });
 
-    const cameraAnimation = Fn(([earlyProgress,inBetween,lastProgress, inLastProgress]) => {
-        // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
-        const progress = earlyProgress;
+    const generateWaveOctave = Fn(([uv_immutable, choppiness_immutable]) => {
+        const chop = float(choppiness_immutable).toVar();
+        const uv = vec2(uv_immutable).toVar();
+        uv.addAssign(perlinNoise(uv));
+        const wave = vec2(oneMinus(abs(sin(uv)))).toVar();
+        const secondary = vec2(abs(cos(uv))).toVar();
+        wave.assign(mix(wave, secondary, wave));
+        return pow(oneMinus(wave.x.mul(wave.y)), chop);
+    });
 
-        const depthKeyframes = array([float(-2.0), float(3.0), float(8.0), float(15.0), float(10.0), float(20.0)]);
-        const tiltKeyframes = array([float(0.65), float(0.87), float(1.33), float(2.), float(2.8), float(3.14)]);
-        const progressBreakpoints = array([float(0.0), float(0.25), float(0.5), float(0.75), float(0.9), float(1.0)]);
-        const numberBreakpoints = int(6);
-          
-        const cameraProgress = partionProgress(progress, progressBreakpoints, numberBreakpoints);
-        // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
-        const cameraDepth = mix(
-            depthKeyframes.element(cameraProgress.y), 
-            depthKeyframes.element(cameraProgress.y.add(float(1))), 
-            cameraProgress.x
+    const oceanHeightMap = Fn(([p_immutable]) => {
+        const p = vec3(p_immutable).toVar();
+        const freq = float(WAVE_CONFIG.FREQUENCY).toVar();
+        const amp = float(WAVE_CONFIG.BASE_HEIGHT).toVar();
+        const chop = float(WAVE_CONFIG.CHOPPINESS).toVar();
+        const uv = vec2(p.xz).toVar();
+        uv.x.mulAssign(2);
+        const height = float(0).toVar();
+
+        Loop({ start: int(0), end: WAVE_CONFIG.GEO_ITERATIONS }, () => {
+            const w = float(generateWaveOctave(uv.add(animatedWaveTime()).mul(freq), chop)).toVar();
+            w.addAssign(generateWaveOctave(uv.sub(animatedWaveTime()).mul(freq), chop));
+            height.addAssign(w.mul(amp));
+            uv.mulAssign(WAVE_CONFIG.OCTAVE_MATRIX);
+            freq.mulAssign(1.9);
+            amp.mulAssign(0.22);
+            chop.assign(mix(chop, 1.0, 0.2));
+        });
+
+        return p.y.sub(height);
+    });
+
+    const getRayDirection = Fn(([coords, angles]) => {
+        const dir = vec3(normalize(vec3(vec2(coords).toVar().xy, float(-2)))).toVar();
+        return normalize(dir).mul(createRotationMatrix(angles));
+    });
+
+    const computeLineColor = Fn(([coords, camAngles, rayOrig, limitTop, limitBot, inBetween, isLast]) => {
+        const topLimit = float(limitTop).toVar();
+        const botLimit = float(limitBot).toVar();
+        const origin = vec3(rayOrig).toVar();
+        const rayDir = vec3(getRayDirection(coords, camAngles)).toVar();
+        const surface = vec3().toVar();
+        
+        const nearDist = float(0).toVar();
+        const farDist = float(100).toVar();
+        const farH = float(oceanHeightMap(origin.add(rayDir.mul(farDist)))).toVar();
+        const intersect = float(0).toVar();
+
+        If(farH.greaterThan(0), () => {
+            intersect.assign(farDist);
+            surface.assign(origin.add(rayDir.mul(intersect)));
+        }).Else(() => {
+            const nearH = float(oceanHeightMap(origin.add(rayDir.mul(nearDist)))).toVar();
+            Loop({ start: int(0), end: WAVE_CONFIG.RAYMARCH_STEPS }, () => {
+                intersect.assign(mix(nearDist, farDist, nearH.div(nearH.sub(farH))));
+                surface.assign(origin.add(rayDir.mul(intersect)));
+                const h = float(oceanHeightMap(surface)).toVar();
+                If(h.lessThan(0), () => {
+                    farDist.assign(intersect);
+                    farH.assign(h);
+                }).Else(() => {
+                    nearDist.assign(intersect);
+                    nearH.assign(h);
+                });
+            });
+        });
+
+        const lineDist = mix(
+            WAVE_CONFIG.DISTANCE_BETWEEN_LINES,
+            WAVE_CONFIG.DISTANCE_BETWEEN_LINES.mul(0.75),
+            select(isLast.greaterThan(0), 0, inBetween)
+        );
+        
+        const distCoord = float(
+            surface.z.div(lineDist).add(
+                surface.y.add(oneMinus(vec2(coords).toVar().y).add(surface.y).mul(0.35)).mul(3)
+            )
         ).toVar();
         
-        const cameraTiltAngle = mix(
-            tiltKeyframes.element(cameraProgress.y), 
-            tiltKeyframes.element(cameraProgress.y.add(float(1))), 
-            cameraProgress.x
-        ).toVar();
+        const intensity = float(abs(fract(distCoord).sub(0.5)).div(fwidth(distCoord))).toVar();
+        intensity.assign(oneMinus(min(intensity, 1)));
+        intensity.assign(pow(intensity, float(4 / 2.2)));
 
-        If(inBetween.greaterThan(0.0), () => {
-            cameraTiltAngle.assign(tiltKeyframes.element(int(2)).mul(0.9));
-            cameraDepth.assign(depthKeyframes.element(int(2)).mul(0.975));
-        })
+        return step(topLimit, distCoord).mul(step(distCoord, botLimit)).mul(vec4(intensity));
+    });
 
-        return vec2(cameraDepth, cameraTiltAngle)
-    })
+    // ============================================================
+    // FONCTIONS SHADER TSL - EFFETS VISUELS
+    // ============================================================
 
-    const cameraAnimationBis = Fn(([lastProgress, inLastProgress]) => {
-        // DÉFINITION DES POINTS CLÉS DE L'ANIMATION (séquentiel)
-        const progress = lastProgress;
+    const grainEffect = Fn(([uv]) => 
+        fract(sin(dot(uv, vec2(12.9898, 78.233))).mul(43758.5453123))
+    );
 
-        const depthKeyframes = array([float(-2.0), float(1.0), float(5.0), float(7)]);
-        const tiltKeyframes = array([float(0.65), float(0.87), float(1.), float(1.98)]);
-        const progressBreakpoints = array([float(0.0), float(0.25), float(0.66), float(1)]);
-        const numberBreakpoints = int(4);
-          
-        const cameraProgress = partionProgress(progress, progressBreakpoints, numberBreakpoints);
-        // INTERPOLATION AUTOMATIQUE ENTRE LES VALEURS
-        const cameraDepth = mix(
-            depthKeyframes.element(cameraProgress.y), 
-            depthKeyframes.element(cameraProgress.y.add(float(1))), 
-            cameraProgress.x
-        ).toVar();
+    const partitionProgress = Fn(([progress, sequence, count]) => {
+        const idx = float(0).toVar();
+        Loop({ start: int(0), end: count }, ({ i }) => {
+            idx.addAssign(step(sequence.element(float(i).add(1)), progress));
+        });
+        const start = sequence.element(idx);
+        const end = sequence.element(idx.add(1));
+        return vec2(smoothstep(start, end, progress), idx);
+    });
+
+    const cameraAnimation = Fn(([progress, inBetween]) => {
+        const depths = array([float(-2), float(3), float(8), float(15), float(10), float(20)]);
+        const tilts = array([float(0.65), float(0.87), float(1.33), float(2), float(2.8), float(3.14)]);
+        const breaks = array([float(0), float(0.25), float(0.5), float(0.75), float(0.9), float(1)]);
         
-        const cameraTiltAngle = mix(
-            tiltKeyframes.element(cameraProgress.y), 
-            tiltKeyframes.element(cameraProgress.y.add(float(1))), 
-            cameraProgress.x
-        ).toVar();
-
-        return vec2(cameraDepth, cameraTiltAngle)
-    })
-
-
-
-    const circle = Fn(([shadertoyUV,inBetweenLimits,earlyProgressLimits]) => {
-        const _uv = shadertoyUV.toVar();
-        _uv.y.addAssign(.15);
-        
-        const circle = distance(vec2(0,0),shadertoyUV).toVar();
-        const circleShadow = distance(vec2(0,0),_uv).toVar();
-        const limit = smoothstep(inBetweenLimits.x,inBetweenLimits.y.mul(0.9825), uniforms.PROGRESS).toVar()
-
-        const progressBreakpoints = array([float(0.0), float(0.25), float(0.75), float(1.0)]);
-        const valuesProgress = array([float(0), float(1.0), float(1.0), float(0.0)]);
-
-        const numberBreakpoints = int(4);
-
-        const circleProgressPartition = partionProgress(limit, progressBreakpoints, numberBreakpoints);
-        const circleProgress = mix(
-            valuesProgress.element(circleProgressPartition.y), 
-            valuesProgress.element(circleProgressPartition.y.add(float(1))), 
-            circleProgressPartition.x
-        ).mul(10).toVar();
-
-        const bottomLimit = circleProgress.x.sub(circleProgress.x.mul(0.0025));
-        const outerBorder = float(1).sub(step(circleProgress.x,circle));
-        const innerBorder = float(1).sub(step(bottomLimit,circle));
-        const inner = float(1).sub(smoothstep(0,circleProgress.x.mul(1.25),circle));
-
-        const border = outerBorder.sub(innerBorder).toVar();
-
-        return vec2(border,inner)
-    })
-
-    const computeLines = Fn(([earlyProgress,inBetween,shadertoyUV]) => {
-        const cameraAnim = cameraAnimation(earlyProgress,inBetween)
-        const lineLimitTop = mix(float( 0.0 ),float( -150.0 ),inBetween)
-        const lineLimitBottom = mix(float( 115.0 ),float( 315.0 ),inBetween);
-        const cameraAngles = vec3( float( 0.0 ), cameraAnim.y, float( 0.0 ) ).toVar();
-        const rayOrigin = vec3( float( 0.), 10, cameraAnim.x).toVar();
-        const baseLineColor = vec4( computeLineColor( shadertoyUV, cameraAngles, rayOrigin, lineLimitTop, lineLimitBottom, inBetween, float(0) ) ).toVar()
+        const p = partitionProgress(progress, breaks, int(6));
+        const depth = mix(depths.element(p.y), depths.element(p.y.add(1)), p.x).toVar();
+        const tilt = mix(tilts.element(p.y), tilts.element(p.y.add(1)), p.x).toVar();
 
         If(inBetween.greaterThan(0), () => {
-            baseLineColor.mulAssign(0.25)
-        }).Else(() => {
-            baseLineColor.mulAssign(0.5)
+            tilt.assign(tilts.element(int(2)).mul(0.9));
+            depth.assign(depths.element(int(2)).mul(0.975));
+        });
 
-        })
-    
-        return baseLineColor;
-    })
-    
-    const computeLinesLast = Fn(([lastProgress,inLastProgress,shadertoyUV,inBetween]) => {
-        const baseLineColorBis = float(0).toVar();
-    
-        If(inLastProgress.greaterThan(0.0), () => {
-            const cameraAnimBis = cameraAnimationBis(lastProgress,inLastProgress)
-            const lineLimitTopBis = float(-0);
-            const lineLimitBottomBis = float(50);
-            const rayOriginBis = vec3( float( 0.), 10, cameraAnimBis.x).toVar();
-            const cameraAnglesBis = vec3( float( 0.0 ), cameraAnimBis.y, float( 0.0 ) ).toVar();
-            baseLineColorBis.assign(vec4( computeLineColor( shadertoyUV, cameraAnglesBis, rayOriginBis, lineLimitTopBis, lineLimitBottomBis, inBetween, float(1) ) ).mul(0.75));
-        })
+        return vec2(depth, tilt);
+    });
+
+    const cameraAnimationAlt = Fn(([progress]) => {
+        const depths = array([float(-2), float(1), float(5), float(7)]);
+        const tilts = array([float(0.65), float(0.87), float(1), float(1.98)]);
+        const breaks = array([float(0), float(0.25), float(0.66), float(1)]);
         
-        return baseLineColorBis;
-    })
+        const p = partitionProgress(progress, breaks, int(4));
+        return vec2(
+            mix(depths.element(p.y), depths.element(p.y.add(1)), p.x),
+            mix(tilts.element(p.y), tilts.element(p.y.add(1)), p.x)
+        );
+    });
 
+    const circleEffect = Fn(([uv, limits]) => {
+        const dist = distance(vec2(0, 0), uv).toVar();
+        const limit = smoothstep(limits.x, limits.y.mul(0.9825), uniforms.PROGRESS).toVar();
 
+        const breaks = array([float(0), float(0.25), float(0.75), float(1)]);
+        const values = array([float(0), float(1), float(1), float(0)]);
+        
+        const p = partitionProgress(limit, breaks, int(4));
+        const radius = mix(values.element(p.y), values.element(p.y.add(1)), p.x).mul(10).toVar();
 
-    const colorGradient = Fn(([uv_immutable,colors,colorsPos,colorsCount,colorsBis,transitionProgress = 0, useProgress = 1]) => {
+        const outer = oneMinus(step(radius.x, dist));
+        const inner = oneMinus(step(radius.x.sub(radius.x.mul(0.0025)), dist));
+        const fill = oneMinus(smoothstep(0, radius.x.mul(1.25), dist));
 
-        const _uv = vec2(uv_immutable).toVar();
-        const uv0 = vec2(uv_immutable).toVar();
-        const radius = length(uv0)
-        const center = oneMinus(radius)
+        return vec2(outer.sub(inner), fill);
+    });
 
-        const amp1 = float(2.1)
-        const amp2 = float(1.75)
-        const _d = float(0.8)
+    const computeLines = Fn(([progress, inBetween, uv]) => {
+        const cam = cameraAnimation(progress, inBetween);
+        const topLimit = mix(float(0), float(-150), inBetween);
+        const botLimit = mix(float(115), float(315), inBetween);
+        const angles = vec3(0, cam.y, 0).toVar();
+        const origin = vec3(0, 10, cam.x).toVar();
+        
+        const color = vec4(computeLineColor(uv, angles, origin, topLimit, botLimit, inBetween, float(0))).toVar();
+        If(inBetween.greaterThan(0), () => color.mulAssign(0.25)).Else(() => color.mulAssign(0.5));
+        return color;
+    });
+
+    const computeLinesAlt = Fn(([progress, inProgress, uv, inBetween]) => {
+        const color = float(0).toVar();
+        If(inProgress.greaterThan(0), () => {
+            const cam = cameraAnimationAlt(progress);
+            const angles = vec3(0, cam.y, 0).toVar();
+            const origin = vec3(0, 10, cam.x).toVar();
+            color.assign(vec4(computeLineColor(uv, angles, origin, float(0), float(50), inBetween, float(1))).mul(0.75));
+        });
+        return color;
+    });
+
+    const uvFlowField = Fn(([uv_in]) => {
+        const uv = vec2(uv_in).toVar();
+        const center = oneMinus(length(uv));
+        const t = time.mul(0.25);
+
         Loop({ start: 1, end: 2, type: 'float', condition: '<=' }, ({ i }) => {
-            const strength = _d.mul(center).div(i)
-           
-            _uv.x.addAssign(strength.mul(sin(_time.add(_uv.y.mul(i)))).mul(amp1))
-            _uv.y.addAssign(strength.mul(cos(_time.add(_uv.x.mul(i)))).mul(amp2))
-          })
+            const str = float(0.8).mul(center).div(i);
+            uv.x.addAssign(str.mul(sin(t.add(uv.y.mul(i)))).mul(0.21));
+            uv.y.addAssign(str.mul(cos(t.add(uv.x.mul(i)))).mul(0.55));
+        });
 
-        const _time = time.mul(.25);
+        return rotate(uv, log(length(uv)).mul(0.15));
+    });
 
-        // Domain warping and rotation - this is a placeholder for now
-        const uvR = _uv
-        const angle = log(length(uvR)).mul(0.2)
-        uvR.assign(rotate(uvR, angle))
-        const finalColor = vec3(0).toVar()
-        const totalWeight = float(0).toVar()
+    const colorGradient = Fn(([uv_in, colors, positions, count, colorsBis, transition = 0, useProgress = 1]) => {
+        const uv = vec2(uv_in).toVar();
+        const center = oneMinus(length(uv));
+        const t = time.mul(0.25);
 
-        // Loop through all color spots and blend them together
-        Loop({ start: 0, end: colorsCount, type: 'float' }, ({ i }) => {
-            // Calculate control point
-            // Base angle for this color spot - creates different starting positions
-            const baseAngle = i.mul(PI)
-            
-            // Calculate the position of a control point in a circular motion (using sine/cosine with the angle will place points around a circle)
-            // Note that we're using _time here, which will make these positions animated
-            const x = sin(_time.mul(i.mul(0.75)).add(baseAngle)).mul(0.5)
-            const y = cos(_time.mul(2).add(baseAngle.mul(2.5))).mul(1)
-            const pos = colorsPos.element(i).add(vec2(x,y).add(uniforms.PROGRESS.mul(i.mul(useProgress).add(float(0.25).mul(useProgress)))))
-        
-            // Get a specific color
-            const _c = mix(colors.element(i),colorsBis.element(i),transitionProgress)
-        
-            // Determine weightings
-            // Calculate distance from current fragment to this color spot
-            const dist = length(uvR.sub(pos)).toVar()
-            dist.assign(pow(dist,4.2))
-            
-            // Calculate weight based on distance - closer spots have higher weight
-            const weight = div(1, max(0, dist))
-            
-            // Accumulate color and total weight
-            finalColor.addAssign(_c.mul(weight))
-            totalWeight.addAssign(weight)
-        })
-    
-        return finalColor.div(totalWeight)
-    })
+        Loop({ start: 1, end: 2, type: 'float', condition: '<=' }, ({ i }) => {
+            const str = float(0.8).mul(center).div(i);
+            uv.x.addAssign(str.mul(sin(t.add(uv.y.mul(i)))).mul(2.1));
+            uv.y.addAssign(str.mul(cos(t.add(uv.x.mul(i)))).mul(1.75));
+        });
+
+        const uvR = rotate(uv, log(length(uv)).mul(0.2));
+        const finalColor = vec3(0).toVar();
+        const totalWeight = float(0).toVar();
+
+        Loop({ start: 0, end: count, type: 'float' }, ({ i }) => {
+            const angle = i.mul(PI);
+            const x = sin(t.mul(i.mul(0.75)).add(angle)).mul(0.5);
+            const y = cos(t.mul(2).add(angle.mul(2.5)));
+            const pos = positions.element(i).add(
+                vec2(x, y).add(uniforms.PROGRESS.mul(i.mul(useProgress).add(float(0.25).mul(useProgress))))
+            );
+
+            const c = mix(colors.element(i), colorsBis.element(i), transition);
+            const d = length(uvR.sub(pos)).toVar();
+            d.assign(pow(d, 4.2));
+            const w = div(1, max(0, d));
+
+            finalColor.addAssign(c.mul(w));
+            totalWeight.addAssign(w);
+        });
+
+        return finalColor.div(totalWeight);
+    });
 
     const curvedLines = Fn(() => {
-        const limit = float(20)
+        const limit = float(20);
+        const a = step(limit, screenCoordinate.x);
+        const b = step(limit.add(1), screenCoordinate.x);
+        return vec2(a.sub(b), b);
+    });
 
-        const lineA = step(limit, screenCoordinate.x)
-        const lineB = step(limit.add(1), screenCoordinate.x)
+    // ============================================================
+    // CONSTRUCTION DU MATERIAL
+    // ============================================================
 
-        const finalLine = lineA.sub(lineB)
-        return vec2(finalLine,lineB)
-    })
+    function buildShader(mat) {
+        // Palettes de couleurs
+        const colors = uniformArray([
+            new Color('#DAC489'), new Color('#73CAB0'), 
+            new Color('#3B4D3B'), new Color('#315261')
+        ]);
+        const colorsPos = uniformArray([
+            new Vector2(0, -1), new Vector2(0, 0), 
+            new Vector2(0, 0.25), new Vector2(0.5, 0.5)
+        ]);
+        
+        const bgColors = uniformArray([
+            new Color('#FDE7C5'), new Color('#AAA97F'), new Color('#E6D3A4')
+        ]);
+        const bgPos = uniformArray([
+            new Vector2(0, -1), new Vector2(0.5, 0), new Vector2(0, 0)
+        ]);
 
-    
-    const uvFlowField = Fn(([uv_immutable]) => {
+        // Calcul des phases de progression
+        const earlyLimits = vec2(0, 0.26);
+        const early = smoothstep(earlyLimits.x, earlyLimits.y, uniforms.PROGRESS).toVar();
 
-        const _uv = vec2(uv_immutable).toVar();
-        const uv0 = vec2(uv_immutable).toVar();
-        const radius = length(uv0)
-        const center = oneMinus(radius)
+        const midLimits = vec2(earlyLimits.y.mul(0.75), 0.8);
+        const mid = step(midLimits.x, uniforms.PROGRESS).sub(step(midLimits.y.mul(0.95), uniforms.PROGRESS));
 
-        const amp1 = float(.21)
-        const amp2 = float(.55)
-        const _d = float(0.8)
-        Loop({ start: 1, end: 2, type: 'float', condition: '<=' }, ({ i }) => {
-            const strength = _d.mul(center).div(i)
-           
-            _uv.x.addAssign(strength.mul(sin(_time.add(_uv.y.mul(i)))).mul(amp1))
-            _uv.y.addAssign(strength.mul(cos(_time.add(_uv.x.mul(i)))).mul(amp2))
-          })
+        const lastLimits = vec2(midLimits.y.mul(0.775), 1.1);
+        const last = smoothstep(lastLimits.x, lastLimits.y, uniforms.PROGRESS).toVar();
+        const inLast = step(lastLimits.x, uniforms.PROGRESS).sub(step(lastLimits.y, uniforms.PROGRESS));
 
-        const _time = time.mul(0.25);
+        // UV setup
+        const uvY = mix(screenUV.y, oneMinus(screenUV.y), uniforms.FLIP_UV_Y);
+        const uvGPU = vec2(screenUV.x, oneMinus(screenUV.y)).toVar();
+        const centered = vec2(uvGPU.mul(2).sub(1)).toVar();
+        const shaderUV = vec2(centered.x.mul(uniforms.ASPECT), centered.y).toVar();
 
-        // Domain warping and rotation - this is a placeholder for now
-        const uvR = _uv
-        const angle = log(length(uvR)).mul(0.15)
-        uvR.assign(rotate(uvR, angle))
+        // Effet curseur
+        const cursorTex = texture(dataTextureStatic, vec2(uvGPU.x, uvY));
+        const cursor = gaussianBlur(cursorTex, null, 1).rg;
 
-        return uvR
-    })
+        // UVs finaux
+        const finalUV = shaderUV.add(cursor.mul(0.125));
+        const linesUV = uvFlowField(shaderUV.mul(vec2(1.35))).add(cursor.mul(0.1));
+        const circleUV = uvFlowField(shaderUV).add(cursor.mul(0.15));
 
-     const rotate = /*@__PURE__*/ Fn( ( [ v, a ] ) => {
+        // Calcul des effets
+        const curves = curvedLines();
+        const lines = computeLines(early, mid, linesUV).mul(0.15).mul(curves.y);
+        const linesAlt = computeLinesAlt(last, inLast, linesUV, mid).mul(0.15).mul(curves.y);
+        const circ = circleEffect(circleUV, midLimits);
+        
+        const gradient = colorGradient(finalUV, colors, colorsPos, int(4), bgColors);
+        const circColor = mix(float(1), circ.y, mid).mul(10);
+        const innerCol = mix(float(0), circ.y.mul(gradient), mid);
 
-        const s = sin( a );
-        const c = cos( a );
-        const m = mat2( c, s, s.negate(), c );
-    
-        return m.mul( v );
-    
-    }, { v: 'vec2', a: 'float', return: 'vec2' } );
+        const bgGradient = colorGradient(finalUV, bgColors, bgPos, int(3), bgColors);
 
+        // Composition
+        const grain = grainEffect(finalUV).mul(0.1);
+        const innerLines = lines.mul(circColor.x).add(circ.x.mul(0.35)).add(linesAlt.mul(7.5));
+        const effects = vec3(1).sub(innerLines).sub(circ.y).add(innerCol);
 
-    function fragmentMat(mat){
-        const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#3B4D3B'), new Color('#315261')]);
-        const colorsPos = uniformArray([new Vector2(0,-1), new Vector2(0,0), new Vector2(0,0.25), new Vector2(0.5,0.5)])
-        const colorsCount = int(4);
+        const loader = bgColors.element(0);
+        const home = bgGradient.mul(effects);
+        const project = colorGradient(
+            finalUV, uniforms.PROJECT_COLORS_CURRENT, bgPos, int(3),
+            uniforms.PROJECT_COLORS_NEXT, uniforms.PROGRESS_PROJECT_TRANSITION, 0
+        );
 
-        const colorsBackground = uniformArray([new Color('#FDE7C5'), new Color('#AAA97F'), new Color('#E6D3A4')]);
-        const colorsPosBackground = uniformArray([new Vector2(0,-1), new Vector2(0.5,0),new Vector2(0,0)]);
-        const colorsCountBackground = int(3);
+        const page = mix(home, project, uniforms.PROGRESS_PROJECT);
+        const final = mix(loader, page, uniforms.PROGRESS_LOADER);
 
-        const earlyProgressLimits = vec2(0,0.26);
-        const earlyProgress = smoothstep(earlyProgressLimits.x, earlyProgressLimits.y, uniforms.PROGRESS).toVar()
-
-        const inBetweenLimits = vec2(earlyProgressLimits.y.mul(0.75),.8);
-        const inBetween = step(inBetweenLimits.x,uniforms.PROGRESS).sub(step(inBetweenLimits.y.mul(0.95),uniforms.PROGRESS));
-
-        const lastLimits = vec2(inBetweenLimits.y.mul(0.775),1.1);
-        const lastProgress = smoothstep(lastLimits.x, lastLimits.y, uniforms.PROGRESS).toVar()
-        const inLastProgress = step(lastLimits.x,uniforms.PROGRESS).sub(step(lastLimits.y,uniforms.PROGRESS));
-
-        // WebGPU: screenUV.y=0 en haut → on flip (1-y). WebGL: screenUV.y=0 en bas → on garde screenUV.y.
-        const uvY = mix(screenUV.y, float(1.0).sub(screenUV.y), uniforms.FLIP_UV_Y);
-        const uvWebGPU = vec2(screenUV.x, float(1.0).sub(screenUV.y)).toVar();
-        const centered = vec2( uvWebGPU.mul( 2.0 ).sub( 1.0 ) ).toVar();
-        const aspectNode = float( uniforms.ASPECT );
-        const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
-        // Sur mobile (USE_CURSOR_EFFECT=0) on skip texture + gaussianBlur pour garder les FPS au scroll.
-        const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY));
-        const cursor = gaussianBlur(textureCursor, null, 1);
-        const velocityCursor = cursor.rg
-
-        const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
-        const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.1))
-        const circleUV = uvFlowField(shadertoyUV).add(velocityCursor.mul(.15))
-
-        const curvedLinesVal = curvedLines()
-
-        const baseLineColor = computeLines(earlyProgress,inBetween,finalUVLines).mul(0.15).mul(curvedLinesVal.y);
-        const baseLineColorBis = computeLinesLast(lastProgress,inLastProgress,finalUVLines,inBetween).mul(0.15).mul(curvedLinesVal.y);
-        const circleVal = circle(circleUV,inBetweenLimits);
-        const colorGradientVal = colorGradient(finalUV,colors,colorsPos,colorsCount,colorsBackground);
-        const circleColor = mix(float(1),circleVal.y,inBetween).mul(10);
-        const innerColor = mix(float(0),circleVal.y.mul(colorGradientVal),inBetween).mul(1);
-
-        const colorGradientValBackground = colorGradient(finalUV,colorsBackground,colorsPosBackground,colorsCountBackground,colorsBackground);
-
-
-        const _grain = grainTextureEffect(finalUV).mul(0.1)
-        const innerColors = baseLineColor.mul(circleColor.x).add(circleVal.x.mul(0.35)).add(baseLineColorBis.mul(7.5))
-        const effectsColor = vec3(1).sub(innerColors).sub(circleVal.y.mul(1)).add(innerColor)
-
-        const loaderBackground = colorsBackground.element(0);
-        const homeBackground = colorGradientValBackground.mul(effectsColor)
-        const projectBackground = colorGradient(finalUV,uniforms.PROJECT_COLORS_CURRENT,colorsPosBackground,colorsCountBackground,uniforms.PROJECT_COLORS_NEXT,uniforms.PROGRESS_PROJECT_TRANSITION,0);
-    
-
-        const finalPageBackground = mix(homeBackground,projectBackground,uniforms.PROGRESS_PROJECT);
-        const finalBackground = mix(loaderBackground,finalPageBackground,uniforms.PROGRESS_LOADER);
-        mat.colorNode = finalBackground.add(_grain)
-
-
-   
+        mat.colorNode = final.add(grain);
     }
 
+    // ============================================================
+    // MATERIAL & RENDER
+    // ============================================================
+
     const material = useMemo(() => {
-
-        if(!materialRef.current){
-            materialRef.current = new THREE.MeshBasicNodeMaterial({
-            side: DoubleSide,
-             })
+        if (!materialRef.current) {
+            materialRef.current = new THREE.MeshBasicNodeMaterial({ side: DoubleSide });
         }
-        fragmentMat(materialRef.current)
-
-        console.log("rerender material")
+        buildShader(materialRef.current);
+        materialRef.current.needsUpdate = true;
         return materialRef.current;
-    },[])
+    }, [textureVersion, dataTextureStatic]);
 
+    const planeZ = 1;
+    const { width, height } = viewport.getCurrentViewport(camera, [0, 0, planeZ]);
 
-    const planeZ = 1
-    const { camera, viewport } = useThree()
-    const { width, height } = viewport.getCurrentViewport(camera, [0,0,planeZ])
-
-    const frameCountRef = useRef(0);
-    useFrame((state) => {
-        const { gl, scene, camera, pointer } = state;
-        // Sur mobile : mettre à jour le scroll moins souvent pour alléger le main thread pendant le scroll.
-        update();
-       
+    useFrame(({ pointer }) => {
+        updateScroll();
         if (!isMobile) {
             updateTexture({ x: pointer.x, y: pointer.y });
-            uniforms.MOUSE_POSITION.value.x = pointer.x;
-            uniforms.MOUSE_POSITION.value.y = pointer.y;
+            uniforms.MOUSE_POSITION.value.set(pointer.x, pointer.y);
         }
         if (mainRenderTarget.width !== size.width || mainRenderTarget.height !== size.height) {
             mainRenderTarget.setSize(size.width, size.height);
         }
     });
 
+    // ============================================================
+    // RENDER
+    // ============================================================
+
     return (
         <group>
-            <mesh ref={glassWallRef} position={[0,0,planeZ]} >
+            <mesh ref={glassWallRef} position={[0, 0, planeZ]}>
                 <planeGeometry args={[width, height]} />
                 <primitive object={material} />
             </mesh>
         </group>
-
-    )
+    );
 }
-
-
-

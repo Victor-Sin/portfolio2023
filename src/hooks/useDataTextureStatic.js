@@ -1,4 +1,4 @@
-import {useMemo, useRef, useEffect} from "react";
+import {useMemo, useRef, useEffect, useState, useCallback} from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 
@@ -13,6 +13,7 @@ export default function useDataTextureStatic(
     influenceGamma = 1
 ){
     const {gl} = useThree()
+    const [textureVersion, setTextureVersion] = useState(0)
 
     // Pointer tracking refs - updated without triggering re-renders
     const pointerVelocityRef = useRef({ x: 0, y: 0 })
@@ -21,178 +22,204 @@ export default function useDataTextureStatic(
     const canvasBoundsRef = useRef(null)
     const aspectRef = useRef(0)
     const heightRef = useRef(0)
+    const dataTextureRef = useRef(null)
 
-    const updateCanvasBounds = () => {
-        const canvas = gl.domElement
-        if (canvas) {
-          canvasBoundsRef.current = canvas.getBoundingClientRect()
-          aspectRef.current = canvasBoundsRef.current.height / canvasBoundsRef.current.width 
-          heightRef.current = width*aspectRef.current
-      }
-    }
-
-    const dataTexture = useMemo(() => {
-        if(aspectRatio == 0){
-            updateCanvasBounds()
+    // Fonction pour créer une nouvelle texture
+    const createTexture = useCallback((height) => {
+        // Libérer l'ancienne texture si elle existe
+        if (dataTextureRef.current) {
+            dataTextureRef.current.dispose()
         }
-        else{
-            aspectRef.current = aspectRatio;
-            heightRef.current = width*aspectRef.current
-            console.log(aspectRatio,heightRef.current)
 
-        }
-        const data = new Float32Array(heightRef.current * width * 4);
-
-        for (let i = 0; i < width * heightRef.current; i++) {
+        const data = new Float32Array(height * width * 4)
+        for (let i = 0; i < width * height; i++) {
             const idx = i * 4
-            data[idx] = Math.random() // R channel
-            data[idx + 1] = Math.random() // G channel
-            data[idx + 2] = Math.random() // B channel
-            data[idx + 3] = 1.0 // A channel
-          }
+            data[idx] = 0
+            data[idx + 1] = 0
+            data[idx + 2] = 0
+            data[idx + 3] = 1.0
+        }
 
-        const dataTexture = new THREE.DataTexture(
+        const newTexture = new THREE.DataTexture(
             data,
             width,
-            heightRef.current,
+            height,
             THREE.RGBAFormat,
-            THREE.FloatType)
-        dataTexture.minFilter = dataTexture.magFilter = THREE.NearestFilter
-        dataTexture.needsUpdate = true
+            THREE.FloatType
+        )
+        newTexture.minFilter = THREE.NearestFilter
+        newTexture.magFilter = THREE.NearestFilter
+        newTexture.needsUpdate = true
 
-        return dataTexture
-    },[width])
+        dataTextureRef.current = newTexture
+        return newTexture
+    }, [width])
 
-    useEffect(() => {
-        if(aspectRatio == 0){
-            updateCanvasBounds()
-            window.addEventListener("resize", updateCanvasBounds, { passive: true });
+    // Calcule les bounds et retourne la nouvelle hauteur
+    const computeBoundsAndHeight = useCallback(() => {
+        const canvas = gl.domElement
+        if (canvas) {
+            canvasBoundsRef.current = canvas.getBoundingClientRect()
+            aspectRef.current = aspectRatio === 0 
+                ? canvasBoundsRef.current.height / canvasBoundsRef.current.width 
+                : aspectRatio
+            return Math.round(width * aspectRef.current)
         }
-      
-        return () => {
-            window.removeEventListener("resize", updateCanvasBounds);
-        };
-    },[])
+        return heightRef.current || Math.round(width)
+    }, [gl, aspectRatio, width])
+
+    // Création initiale de la texture
+    const dataTexture = useMemo(() => {
+        const height = computeBoundsAndHeight()
+        heightRef.current = height
+        return createTexture(height)
+    }, [width, textureVersion, computeBoundsAndHeight, createTexture])
+
+    // Gestion du resize
+    useEffect(() => {
+        const handleResize = () => {
+            const newHeight = computeBoundsAndHeight()
+            
+            // Si la hauteur a changé, incrémenter la version pour recréer la texture
+            if (newHeight !== heightRef.current) {
+                heightRef.current = newHeight
+                
+                // Reset des états de la souris
+                pointerRef.current = { x: 0, y: 0 }
+                pointerVelocityRef.current = { x: 0, y: 0 }
+                rawPointerRef.current = { x: 0, y: 0 }
+                
+                // Trigger re-création de la texture et du material
+                setTextureVersion(v => v + 1)
+            }
+        }
+
+        window.addEventListener("resize", handleResize, { passive: true })
+        return () => window.removeEventListener("resize", handleResize)
+    }, [computeBoundsAndHeight])
 
     function updateTexture(mousePosition){
-        if(dataTexture ){
+        if(dataTexture){
             let bounds = canvasBoundsRef.current
-            if (!bounds && aspectRatio == 0) {
-              updateCanvasBounds()
-              bounds = canvasBoundsRef.current
-              if (!bounds) {
-                throw new Error('Canvas bounds not found')
-              }
+            if (!bounds && aspectRatio === 0) {
+                // Recalculer les bounds si nécessaire
+                computeBoundsAndHeight()
+                bounds = canvasBoundsRef.current
+                if (!bounds) {
+                    return // Pas de canvas disponible, skip cette frame
+                }
             }
 
-            rawPointerRef.current = {x: mousePosition.x , y: mousePosition.y}
-
+            rawPointerRef.current = { x: mousePosition.x, y: mousePosition.y }
             frameUpdateFalloff()
         }
     }
 
     function frameUpdateFalloff(){
         const dt = dataTexture
-        if (!dt) {
-            return
-        }
+        if (!dt) return
         
-        // Use accurate pointer position from DOM events, or fallback to decay only if not available
+        const data = dt.image.data
+        const h = heightRef.current
+        
+        // Si pas de données de pointeur, decay seulement
         const rawPointer = rawPointerRef.current
         if (!rawPointer) {
-            // No pointer data available, decay existing values only
-            const data = dt.image.data
             for (let i = 0; i < data.length; i += 4) {
-            data[i] *= decayFactor
-            data[i + 1] *= decayFactor
-            data[i + 2] *= decayFactor
+                data[i] *= decayFactor
+                data[i + 1] *= decayFactor
+                data[i + 2] *= decayFactor
             }
             dt.needsUpdate = true
             return
         }
         
+        // Mise à jour de la vélocité du pointeur
         const pointerNormX = rawPointer.x
         const pointerNormY = rawPointer.y
         
-        const prevPointerX = pointerRef.current.x
-        const prevPointerY = pointerRef.current.y
-        
-        pointerVelocityRef.current.x = pointerNormX - prevPointerX
-        pointerVelocityRef.current.y = pointerNormY - prevPointerY
+        pointerVelocityRef.current.x = pointerNormX - pointerRef.current.x
+        pointerVelocityRef.current.y = pointerNormY - pointerRef.current.y
         
         pointerRef.current.x = pointerNormX
         pointerRef.current.y = pointerNormY
         
-        const data = dt.image.data
-
-        const size = width * heightRef.current
-        
-        // Map pointer into grid coordinates
+        // Précalculs (hors boucle)
         const mouseRadiusX = width * radius
         const mouseRadiusY = mouseRadiusX * aspectRef.current
+        const distMaxSq = mouseRadiusX * mouseRadiusX + mouseRadiusY * mouseRadiusY
+        const sqrtDistMax = Math.sqrt(distMaxSq)
 
-        const cellX =  uvClassic ?  (pointerRef.current.x) * width  : (1 + pointerRef.current.x) * 0.5 * width 
-        const cellY =  uvClassic ? (pointerRef.current.y) * heightRef.current  : (1 + pointerRef.current.y) * 0.5 * heightRef.current 
+        const cellX = uvClassic 
+            ? pointerRef.current.x * width 
+            : (1 + pointerRef.current.x) * 0.5 * width
+        const cellY = uvClassic 
+            ? pointerRef.current.y * h 
+            : (1 + pointerRef.current.y) * 0.5 * h
         
-        // Decay existing values (RGB channels only)
-        for (let i = 0; i < data.length; i += 4) {
-            data[i] *= decayFactor
-            data[i + 1] *= decayFactor
-            data[i + 2] *= decayFactor
-        }
+        // Bounding box pour limiter la zone d'influence
+        const minX = Math.max(0, Math.floor(cellX - mouseRadiusX))
+        const maxX = Math.min(width, Math.ceil(cellX + mouseRadiusX))
+        const minY = Math.max(0, Math.floor(cellY - mouseRadiusY))
+        const maxY = Math.min(h, Math.ceil(cellY + mouseRadiusY))
         
-        // Apply influence using a 1 / dist falloff, clamped near the center
-        for (let x = 0; x < width; x++)
-            for (let y = 0; y < heightRef.current; y++) {
-            const cellCenterX = x + 0.5
-            const cellCenterY = y + 0.5
-            const dist = (cellX - cellCenterX) ** 2 + (cellY - cellCenterY) ** 2
-            const distMax = mouseRadiusX ** 2 + mouseRadiusY ** 2
-            if (dist < distMax && dist > 0) {
-                const dataIndex = 4 * (x + width * y)
-                let force = Math.sqrt(distMax) / Math.sqrt(dist )
-                force = Math.max(0, Math.min(force, 2))        
-                // Convert pointer velocity (pixels) into grid-space velocity with per-axis scale
-                const vxGrid = pointerVelocityRef.current.x * (width / 2)
-                const vyGrid = -pointerVelocityRef.current.y * (heightRef.current / 2)
-                const speedGrid = Math.hypot(vxGrid, vyGrid)
+        // Précalcul vélocité (constant pour cette frame)
+        const vxGrid = pointerVelocityRef.current.x * (width / 2)
+        const vyGrid = -pointerVelocityRef.current.y * (h / 2)
+        const speedGrid = Math.hypot(vxGrid, vyGrid)
+        const vxCurved = Math.sign(vxGrid) * Math.pow(Math.abs(vxGrid), influenceGamma)
+        const vyCurved = Math.sign(vyGrid) * Math.pow(Math.abs(vyGrid), influenceGamma)
+        const speedCurved = Math.pow(speedGrid, influenceGamma)
+        const len = Math.hypot(vxCurved, vyCurved) || 1
+        const ndx = vxCurved / len
+        const ndy = vyCurved / len
         
-                // Shape the response with gamma, then scale with gain*strength
-                const vxCurved = Math.sign(vxGrid) * Math.pow(Math.abs(vxGrid), influenceGamma)
-                const vyCurved = Math.sign(vyGrid) * Math.pow(Math.abs(vyGrid), influenceGamma)
-                const speedCurved = Math.pow(speedGrid, influenceGamma)
-        
-                // Encode displacement direction scaled by magnitude (shader applies its own gain)
-                const scale = influenceGain * strength * force
-                const dispBase = scale * speedCurved
-                const len = Math.hypot(vxCurved, vyCurved) || 1
-                const ndx = vxCurved / len
-                const ndy = vyCurved / len
-        
-                // Invert horizontal displacement so consumer shaders don't need to
-                data[dataIndex] += dispBase * -ndx // R: direction X (scaled, inverted)
-                data[dataIndex + 1] += dispBase * ndy // G: direction Y (scaled)
-                data[dataIndex + 2] += scale * speedCurved // B channel = speed magnitude
+        // Une seule passe : decay + influence dans la bounding box
+        for (let y = 0; y < h; y++) {
+            const rowOffset = y * width * 4
+            const inYRange = y >= minY && y < maxY
+            
+            for (let x = 0; x < width; x++) {
+                const idx = rowOffset + x * 4
+                
+                // Decay (toujours appliqué)
+                data[idx] *= decayFactor
+                data[idx + 1] *= decayFactor
+                data[idx + 2] *= decayFactor
+                
+                // Influence (seulement dans la bounding box)
+                if (inYRange && x >= minX && x < maxX) {
+                    const dx = cellX - (x + 0.5)
+                    const dy = cellY - (y + 0.5)
+                    const distSq = dx * dx + dy * dy
+                    
+                    if (distSq < distMaxSq && distSq > 0) {
+                        // Un seul sqrt au lieu de deux
+                        const force = Math.min(2, sqrtDistMax / Math.sqrt(distSq))
+                        const scale = influenceGain * strength * force
+                        const dispBase = scale * speedCurved
+                        
+                        data[idx] += dispBase * -ndx      // R: direction X (inverted)
+                        data[idx + 1] += dispBase * ndy   // G: direction Y
+                        data[idx + 2] += scale * speedCurved // B: speed magnitude
+                    }
+                }
             }
         }
         
         dt.needsUpdate = true
         
-        // Decay pointer velocity symmetrically and zero-out near 0 to stop tail injection
+        // Decay vélocité pointeur
         pointerVelocityRef.current.x *= decayFactor
         pointerVelocityRef.current.y *= decayFactor
         const EPS = 1e-3
-        if (Math.abs(pointerVelocityRef.current.x) < EPS) {
-            pointerVelocityRef.current.x = 0
-        }
-        if (Math.abs(pointerVelocityRef.current.y) < EPS) {
-            pointerVelocityRef.current.y = 0
-        }
-          
+        if (Math.abs(pointerVelocityRef.current.x) < EPS) pointerVelocityRef.current.x = 0
+        if (Math.abs(pointerVelocityRef.current.y) < EPS) pointerVelocityRef.current.y = 0
     }
 
     return {
         updateTexture,
-        dataTexture
+        dataTexture,
+        textureVersion  // Pour que Refraction puisse recréer le material
     }
 }
