@@ -3,7 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import styles from '@/app/page.module.css';
-import Clock from '@/components/UI/Clock';
+import Clock from '@/components/UI/Clock/Clock';
 import Meter from '@/components/UI/Meter';
 import { animateSplitTextWords, animateNav, animateBlurFadeIn, cleanupAnimations } from '@/utils/gsapHelpers';
 import Navigation from '@/components/UI/Navigation';

@@ -1,10 +1,10 @@
 "use client"
-import { use, useRef } from 'react'
+import { use, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import projectsData from '@/data/projects.json'
 import { findProjectBySlug } from '@/utils/slug'
 import styles from './page.module.css'
-import Clock from '@/components/UI/Clock'
+import Clock from '@/components/UI/Clock/Clock'
 import { useGSAP } from '@gsap/react';
 import { gsap } from "gsap";
 import { useProjectSetHomeActive, useProjectSetCount } from '@/contexts/ProjectContext';
@@ -147,11 +147,12 @@ export default function ProjectPage({ params }) {
   useGSAP(() => {
     const fromProjectPage = navigationInfo.previousPage?.includes('project')
     const toProjectPage = navigationInfo.currentPage?.includes('project')
- 
+
     if(!(fromProjectPage && toProjectPage) && !haveBeenAnimate.current){
       haveBeenAnimate.current = true
-      console.log("not navigate project page")
-      console.log(navigationInfo.navigationType)
+      tl.current?.kill()
+      tlImages.current?.kill()
+      console.log("kill timelines")
       if(navigationInfo.navigationType === 'navigate'){
         animationIn(0)
       }
@@ -159,14 +160,21 @@ export default function ProjectPage({ params }) {
         animationIn(2)
       }
     }
- 
 
+    // Cleanup: kill les timelines uniquement (pas de reset haveBeenAnimate ici car le cleanup
+    // s'exécute aussi lors des changements de dépendances, pas seulement au démontage)
     return () => {
-      haveBeenAnimate.current = false
-      tl.current.kill()
-      tlImages.current.kill()
+      tl.current?.kill()
+      tlImages.current?.kill()
     }
   },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
+
+  // Reset haveBeenAnimate uniquement au démontage du composant (changement de page)
+  useEffect(() => {
+    return () => {
+      haveBeenAnimate.current = false
+    }
+  }, [])
 
   function handleClick(id) {
       // Accélérer la réversion en x2 ou x3

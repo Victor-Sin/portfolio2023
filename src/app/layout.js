@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import "@/app/globals.css";
@@ -97,6 +97,46 @@ function LayoutBody({ children }) {
   }, [])
 
   const navigationInfo = useNavigationInfo()
+  const previousPageRef = useRef(navigationInfo.currentPage)
+  
+  // Reset scroll et recalculer les dimensions de Lenis lors des changements de page
+  // Basé sur la doc Lenis: autoResize utilise ResizeObserver mais ne capte pas 
+  // toujours les changements de contenu SPA, donc on appelle resize() manuellement
+  useEffect(() => {
+    if (!lenis) return
+    
+    const fromProjectPage = previousPageRef.current?.includes('project')
+    const toProjectPage = navigationInfo.currentPage?.includes('project')
+    const pageChanged = previousPageRef.current !== navigationInfo.currentPage
+    
+    previousPageRef.current = navigationInfo.currentPage
+    
+    // Si on change de type de page (projet <-> home)
+    if (pageChanged && fromProjectPage !== toProjectPage) {
+      // Reset immédiat du scroll
+      lenis.scrollTo(0, { immediate: true })
+      
+      // Double RAF pour garantir que le DOM est rendu (technique standard)
+      // Frame 1: React a commité les changements
+      // Frame 2: Le navigateur a peint le nouveau contenu
+      let rafId = requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
+          lenis.resize()
+          
+          // Gérer le hash si présent (ex: /#work)
+          const hash = window.location.hash?.substring(1)
+          if (!toProjectPage && hash) {
+            const element = document.getElementById(hash)
+            if (element) {
+              lenis.scrollTo(element, { offset: 0 })
+            }
+          }
+        })
+      })
+      
+      return () => cancelAnimationFrame(rafId)
+    }
+  }, [lenis, navigationInfo.currentPage])
   useGSAP(() => {
     const navType = navigationInfo.navigationType
     const currentPage = navigationInfo.currentPage

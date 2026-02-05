@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import Clock from '@/components/UI/Clock'
+import Clock from '@/components/UI/Clock/Clock'
 import styles from '@/app/page.module.css'
 
 /**

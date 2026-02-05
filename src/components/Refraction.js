@@ -5,7 +5,7 @@ import {useMemo, useRef, useEffect, useCallback, useState} from "react";
 import {DoubleSide, PlaneGeometry, RepeatWrapping, Color, Vector2} from "three";
 import * as THREE from 'three/webgpu'
 import {useFrame, useThree} from "@react-three/fiber";
-import {screenUV,screenCoordinate,time,array,texture, float,distance,log,rotate,PI,uniformArray,div,tanh,oneMinus, int, uniform, Fn,max, add, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
+import {screenUV,screenCoordinate,time,array,texture, float,distance,log,PI,uniformArray,div,min,oneMinus, int, uniform, Fn,max, clamp, mat2, vec3, sin, cos, vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If, normalize, fwidth, step, vec4, smoothstep, length } from 'three/tsl';
 import { computeLineColor } from "@/utils/Lines";
 import { gaussianBlur,  } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useDataTextureRow from "@/hooks/useDataTextureRow";
@@ -44,7 +44,7 @@ export default function Refraction(){
     },[])
  
     
-    const textureNoise = useTexture("/images/noise.png")
+    const textureNoise = useTexture("/images/noise2.png")
     textureNoise.wrapT = RepeatWrapping
     textureNoise.wrapS = RepeatWrapping
 
@@ -104,6 +104,8 @@ export default function Refraction(){
         const navType = navigationInfo.navigationType
         const currentPage = navigationInfo.currentPage
         const previousPage = navigationInfo.previousPage
+
+        
         
         if(navType === 'reload' || navType === 'external'){
             // Le scroll revient automatiquement en haut grâce à scrollRestoration: 'manual' dans layout.js
@@ -150,7 +152,7 @@ export default function Refraction(){
                 ease: "linear",
                 delay: 1,
             })
-            gsap.to(uniforms.PROGRESS_PROJECT, {value: 0, duration: 1, ease: "linear", delay: 1})
+            gsap.to(uniforms.PROGRESS_PROJECT, {value: 0, duration: 1, ease: "power2.out", delay: 1})
         }
 
     },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
@@ -418,6 +420,16 @@ export default function Refraction(){
         return uvR
     })
 
+     const rotate = /*@__PURE__*/ Fn( ( [ v, a ] ) => {
+
+        const s = sin( a );
+        const c = cos( a );
+        const m = mat2( c, s, s.negate(), c );
+    
+        return m.mul( v );
+    
+    }, { v: 'vec2', a: 'float', return: 'vec2' } );
+
 
     function fragmentMat(mat){
         const colors = uniformArray([new Color('#DAC489'), new Color('#73CAB0'), new Color('#3B4D3B'), new Color('#315261')]);
@@ -445,14 +457,9 @@ export default function Refraction(){
         const aspectNode = float( uniforms.ASPECT );
         const shadertoyUV = vec2( centered.x.mul( aspectNode ), centered.y ).toVar();
         // Sur mobile (USE_CURSOR_EFFECT=0) on skip texture + gaussianBlur pour garder les FPS au scroll.
-        const velocityCursor = vec2(0, 0).toVar();
-        If(uniforms.USE_CURSOR_EFFECT.greaterThan(0), () => {
-            const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY));
-            const cursor = gaussianBlur(textureCursor, null, 1);
-            velocityCursor.assign(cursor.rg);
-        });
-
-        const distordUv = vec2( centered.x.mul( aspectNode ).mul(.75), centered.y.mul(1.5) );
+        const textureCursor = texture(dataTextureStatic, vec2(uvWebGPU.x, uvY));
+        const cursor = gaussianBlur(textureCursor, null, 1);
+        const velocityCursor = cursor.rg
 
         const finalUV = shadertoyUV.add(velocityCursor.mul(.125))
         const finalUVLines = uvFlowField(shadertoyUV.mul(vec2(1.35))).add(velocityCursor.mul(.1))
@@ -477,10 +484,13 @@ export default function Refraction(){
         const loaderBackground = colorsBackground.element(0);
         const homeBackground = colorGradientValBackground.mul(effectsColor)
         const projectBackground = colorGradient(finalUV,uniforms.PROJECT_COLORS_CURRENT,colorsPosBackground,colorsCountBackground,uniforms.PROJECT_COLORS_NEXT,uniforms.PROGRESS_PROJECT_TRANSITION,0);
-        
+    
+
         const finalPageBackground = mix(homeBackground,projectBackground,uniforms.PROGRESS_PROJECT);
         const finalBackground = mix(loaderBackground,finalPageBackground,uniforms.PROGRESS_LOADER);
         mat.colorNode = finalBackground.add(_grain)
+
+
    
     }
 
