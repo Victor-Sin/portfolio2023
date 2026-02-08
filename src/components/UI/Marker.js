@@ -269,7 +269,7 @@ export default function Marker() {
 
     const tl = gsap.timeline({
       onComplete: () => {
-        router.push(`/project/test`)
+        router.push(`/project/${currentProject.slug}`)
         setProjectHomeActive(null)
       }
     })

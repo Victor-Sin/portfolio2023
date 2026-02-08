@@ -48,6 +48,8 @@ export default function Refraction() {
     const materialRef = useRef();
     const glassWallRef = useRef();
     const mainRenderTarget = useFBO();
+    const animProjectRef = useRef(null);
+    const animLoaderRef = useRef(null);
     
     const { dataTexture: dataTextureStatic, updateTexture, textureVersion } = useDataTextureStatic(64, 0, false);
     const { size, gl, camera, viewport } = useThree();
@@ -122,10 +124,12 @@ export default function Refraction() {
 
         if (navType === 'reload' || navType === 'external') {
             // Initial load
-            gsap.set(uniforms.PROGRESS_PROJECT, { 
+            animLoaderRef.current?.kill();
+            animProjectRef.current?.kill();
+            animProjectRef.current = gsap.set(uniforms.PROGRESS_PROJECT, { 
                 value: currentPage.includes('project') ? 1 : 0 
             });
-            gsap.fromTo(uniforms.PROGRESS_LOADER, 
+            animLoaderRef.current = gsap.fromTo(uniforms.PROGRESS_LOADER, 
                 { value: 0 }, 
                 { value: 1, duration: 1, ease: "linear", delay: 1 }
             );
@@ -136,22 +140,26 @@ export default function Refraction() {
                 lenis?.scrollTo(0, { immediate: true, duration: 0 }) 
                     ?? window.scrollTo({ top: 0, behavior: 'instant' });
             }
-            gsap.to(uniforms.PROGRESS_PROJECT, {
+            animProjectRef.current?.kill();
+            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, {
                 value: previousPage.includes('project') ? 0 : 1,
-                duration: 1, ease: "linear", delay: 1
+                duration: 2, ease: "power4.inOut", delay: 1
             });
         } 
         else if (navType === 'navigate' && !currentPage.includes('project')) {
             // Retour à home
-            gsap.to(uniforms.PROGRESS_LOADER, { value: 1, duration: 1, ease: "linear", delay: 1 });
-            gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 1, ease: "power2.out", delay: 1 });
+            animLoaderRef.current?.kill();
+            animProjectRef.current?.kill();
+            animLoaderRef.current = gsap.to(uniforms.PROGRESS_LOADER, { value: 1, duration: 1, ease: "linear", delay: 1 });
+            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 2, ease: "power4.inOut", delay: 1 });
         }
     }, [navigationInfo.navigationType, navigationInfo.currentPage, navigationInfo.previousPage]);
 
     useGSAP(() => {
         const isHome = navigationInfo.currentPage === "/" || navigationInfo.currentPage == null;
         if (isHome && projectHomeActive === "redirectProject") {
-            gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 1, ease: "linear" });
+            animProjectRef.current?.kill();
+            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 2, ease: "power4.inOut" });
         }
     }, [projectHomeActive, navigationInfo.currentPage]);
 
@@ -477,7 +485,8 @@ export default function Refraction() {
         const cursor = gaussianBlur(cursorTex, null, 1).rg;
 
         // UVs finaux
-        const finalUV = shaderUV.add(cursor.mul(0.125));
+        const rotation = oneMinus(length(shaderUV.mul(2))).mul(uniforms.PROGRESS_PROJECT).mul(.15);
+        const finalUV = rotate(shaderUV,rotation).add(cursor.mul(0.125));
         const linesUV = uvFlowField(shaderUV.mul(vec2(1.35))).add(cursor.mul(0.1));
         const circleUV = uvFlowField(shaderUV).add(cursor.mul(0.15));
 
