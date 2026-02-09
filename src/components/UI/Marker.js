@@ -265,7 +265,7 @@ export default function Marker() {
   }, []);
 
   const handleClick = contextSafe(() => {
-    setProjectHomeActive("redirectProject")
+    setProjectHomeActive(`/project/${currentProject.slug}`)
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -347,7 +347,7 @@ export default function Marker() {
     <div className={styles.buttonContainer}>
     <button ref={buttonRef} onClick={handleClick}>        
          <span>LEARN MORE</span>
-      </button>
+    </button>
     </div>
     <div className={styles.counter}>
       [ 0<span 

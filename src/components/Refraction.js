@@ -61,7 +61,6 @@ export default function Refraction() {
     const count = useProjectCount();
     const lenis = useLenis();
     
-    const project = projectsData.projects.find(project => navigationInfo.currentPage.includes('project') && navigationInfo.currentPage.includes(project.slug));
     // --------------------------------------------------------
     // UNIFORMS & COLORS
     // --------------------------------------------------------
@@ -83,6 +82,31 @@ export default function Refraction() {
         FLIP_UV_Y: uniform(1),           // WebGPU: flip Y, WebGL: no flip
         USE_CURSOR_EFFECT: uniform(1),   // 0 sur mobile pour économiser les FPS
     }), []);
+
+    const changeColors = useCallback((slugCheck, instant = false) => {
+        const project = projectsData.projects.find(project => slugCheck.includes('project') && slugCheck.includes(project.slug));
+        if(project && count != 0){
+            optionsColors.colorsNext[0].set(project.colors[0])
+            optionsColors.colorsNext[1].set(project.colors[1])
+            optionsColors.colorsNext[2].set(project.colors[2])
+            if(instant){
+                optionsColors.colorsCurrent[0].set(project.colors[0])
+                optionsColors.colorsCurrent[1].set(project.colors[1])
+                optionsColors.colorsCurrent[2].set(project.colors[2])
+            } else {
+                gsap.timeline().to(uniforms.PROGRESS_PROJECT_TRANSITION, {value: 1, duration: 1, ease: "linear", delay: 1, 
+                    onComplete: () => {
+                        optionsColors.colorsCurrent[0].set(project.colors[0])
+                        optionsColors.colorsCurrent[1].set(project.colors[1])
+                        optionsColors.colorsCurrent[2].set(project.colors[2])
+                        uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
+                    }
+                })
+            }
+
+        
+        }
+    }, []);
 
     // --------------------------------------------------------
     // CALLBACKS & EFFECTS
@@ -120,22 +144,8 @@ export default function Refraction() {
     }, [isMobile, uniforms]);
 
     useGSAP(() => {
-        console.log(count)
-        if(count != 0){
-            optionsColors.colorsNext[0].set(project.colors[0])
-            optionsColors.colorsNext[1].set(project.colors[1])
-            optionsColors.colorsNext[2].set(project.colors[2])
-
-            gsap.timeline().to(uniforms.PROGRESS_PROJECT_TRANSITION, {value: 1, duration: 1, ease: "linear", delay: 1, 
-                onComplete: () => {
-                    optionsColors.colorsCurrent[0].set(project.colors[0])
-                    optionsColors.colorsCurrent[1].set(project.colors[1])
-                    optionsColors.colorsCurrent[2].set(project.colors[2])
-                    uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
-                }
-            })
-        }
-    },[count])
+        changeColors(navigationInfo.currentPage);
+    },[count, navigationInfo.currentPage])
 
     // --------------------------------------------------------
     // ANIMATIONS GSAP - NAVIGATION
@@ -174,14 +184,17 @@ export default function Refraction() {
             animProjectRef.current?.kill();
             animLoaderRef.current = gsap.to(uniforms.PROGRESS_LOADER, { value: 1, duration: 1, ease: "linear", delay: 1 });
             animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 2, ease: "power4.inOut", delay: 1 });
+
         }
     }, [navigationInfo.navigationType, navigationInfo.currentPage, navigationInfo.previousPage]);
 
     useGSAP(() => {
         const isHome = navigationInfo.currentPage === "/" || navigationInfo.currentPage == null;
-        if (isHome && projectHomeActive === "redirectProject") {
+        if (isHome && typeof projectHomeActive === "string" && projectHomeActive.includes("project")) {
             animProjectRef.current?.kill();
             animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 2, ease: "power4.inOut" });
+            changeColors(projectHomeActive);
+
         }
     }, [projectHomeActive, navigationInfo.currentPage]);
 
