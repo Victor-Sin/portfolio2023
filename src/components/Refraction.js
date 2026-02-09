@@ -26,13 +26,15 @@ import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
-import { useProjectHomeActive } from '@/contexts/ProjectContext';
+import { useProjectHomeActive,useProjectCount } from '@/contexts/ProjectContext';
 import { useLenis } from 'lenis/react';
 import useMediaQuery from "@/hooks/useMediaQuery";
 
 // Animation
 import { useGSAP } from '@gsap/react';
 import { gsap } from "gsap";
+import projectsData from '@/data/projects.json'
+
 
 // ============================================================
 // COMPOSANT PRINCIPAL
@@ -56,8 +58,10 @@ export default function Refraction() {
     
     const navigationInfo = useNavigationInfo();
     const projectHomeActive = useProjectHomeActive();
+    const count = useProjectCount();
     const lenis = useLenis();
-
+    
+    const project = projectsData.projects.find(project => navigationInfo.currentPage.includes('project') && navigationInfo.currentPage.includes(project.slug));
     // --------------------------------------------------------
     // UNIFORMS & COLORS
     // --------------------------------------------------------
@@ -114,6 +118,24 @@ export default function Refraction() {
     useEffect(() => {
         uniforms.USE_CURSOR_EFFECT.value = isMobile ? 0 : 1;
     }, [isMobile, uniforms]);
+
+    useGSAP(() => {
+        console.log(count)
+        if(count != 0){
+            optionsColors.colorsNext[0].set(project.colors[0])
+            optionsColors.colorsNext[1].set(project.colors[1])
+            optionsColors.colorsNext[2].set(project.colors[2])
+
+            gsap.timeline().to(uniforms.PROGRESS_PROJECT_TRANSITION, {value: 1, duration: 1, ease: "linear", delay: 1, 
+                onComplete: () => {
+                    optionsColors.colorsCurrent[0].set(project.colors[0])
+                    optionsColors.colorsCurrent[1].set(project.colors[1])
+                    optionsColors.colorsCurrent[2].set(project.colors[2])
+                    uniforms.PROGRESS_PROJECT_TRANSITION.value = 0
+                }
+            })
+        }
+    },[count])
 
     // --------------------------------------------------------
     // ANIMATIONS GSAP - NAVIGATION
