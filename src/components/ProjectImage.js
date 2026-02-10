@@ -60,22 +60,41 @@ export default function ProjectImage(){
         const dir = count - prevCountRef.current
         prevCountRef.current = count
 
+        const layerUniforms = [uniforms.LAYER_T1, uniforms.LAYER_T2, uniforms.LAYER_T3, uniforms.LAYER_T4, uniforms.LAYER_T5]
+
+        if (dir === 0) {
+            // Montage initial ou count inchangé : synchroniser tous les layers
+            // avec la valeur absolue du count (les uniforms commencent à 0 au remontage)
+            layerUniforms.forEach((layer, i) => {
+                layer.value = i < count - 1 ? 1 : 0
+            })
+            return
+        }
+
         // DIRECTION doit être 0 ou 1, pas -1 ou 1
         uniforms.DIRECTION.value = dir > 0 ? 1 : 0
 
-        const layerUniforms = [uniforms.LAYER_T1, uniforms.LAYER_T2, uniforms.LAYER_T3, uniforms.LAYER_T4, uniforms.LAYER_T5]
-
-        // Forward : LAYER_T[count-2] → 1 | Backward : LAYER_T[count-1] → 0
-        const idx = dir === 1 ? count - 2 : count - 1
-        const target = dir === 1 ? 1 : 0
-
-        if(idx >= 0 && idx <= 4) {
-            animRefs.current[idx]?.kill()
-            animRefs.current[idx] = gsap.to(layerUniforms[idx], {
-                value: target,
-                duration: 1,
-                ease: "linear"
+        if (Math.abs(dir) > 1) {
+            // Saut non-incrémental : kill toutes les animations et positionner
+            // tous les layers immédiatement à leur état correct
+            animRefs.current.forEach((anim) => anim?.kill())
+            layerUniforms.forEach((layer, i) => {
+                layer.value = i < count - 1 ? 1 : 0
             })
+        } else {
+            // Incrémental (±1) : animer un seul layer
+            // Forward : LAYER_T[count-2] → 1 | Backward : LAYER_T[count-1] → 0
+            const idx = dir === 1 ? count - 2 : count - 1
+            const target = dir === 1 ? 1 : 0
+
+            if(idx >= 0 && idx <= 4) {
+                animRefs.current[idx]?.kill()
+                animRefs.current[idx] = gsap.to(layerUniforms[idx], {
+                    value: target,
+                    duration: 1,
+                    ease: "linear"
+                })
+            }
         }
     },[count])
     

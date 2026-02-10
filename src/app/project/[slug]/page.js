@@ -22,6 +22,7 @@ export default function ProjectPage({ params }) {
   const setCount = useProjectSetCount()
   const count = useProjectCount()
   const haveBeenAnimate = useRef(false)
+  const isRedirectingRef = useRef(false)
   const tl = useRef(null)
   const tlImages = useRef(null)
   const navigationInfo = useNavigationInfo()
@@ -155,10 +156,10 @@ export default function ProjectPage({ params }) {
       haveBeenAnimate.current = true
       tl.current?.kill()
       tlImages.current?.kill()
-      if(fromProjectPage && toProjectPage){
+      if(fromProjectPage && toProjectPage || !fromProjectPage && toProjectPage){
         animationOutReverse()
       }
-      else if(navigationInfo.navigationType === 'navigate'){
+      else if(navigationInfo.navigationType === 'navigate' && !toProjectPage){
         animationIn(0)
       }
       else{
@@ -182,7 +183,8 @@ export default function ProjectPage({ params }) {
   }, [])
 
   useEffect(() => {
-    if(count !== project.id){
+    // Ne pas remettre le count si on est en train de rediriger vers la home
+    if(count !== project.id && !isRedirectingRef.current){
       setCount(project.id)
     }
   }, [project.id, count])
@@ -201,6 +203,13 @@ export default function ProjectPage({ params }) {
         tlImages.current.reverse();
       }
       
+      // Empêcher le useEffect de sync de remettre le count au project.id
+      isRedirectingRef.current = true
+
+      // Mettre le count à la valeur cible selon la section de destination
+      const targetCount = id === "about" ? 6 : 1
+      setCount(targetCount)
+
       setProjectHomeActive("redirectHome")
       setTimeout(() => {
         router.push(`/#${id}`)
