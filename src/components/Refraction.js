@@ -27,6 +27,7 @@ import useScrollProgress from "@/hooks/useScrollProgress";
 import useDataTextureStatic from "@/hooks/useDataTextureStatic";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { useProjectHomeActive,useProjectCount } from '@/contexts/ProjectContext';
+import { useIsLoaded } from "@/contexts/LoaderContext";
 import { useLenis } from 'lenis/react';
 import useMediaQuery from "@/hooks/useMediaQuery";
 
@@ -59,6 +60,7 @@ export default function Refraction() {
     const navigationInfo = useNavigationInfo();
     const projectHomeActive = useProjectHomeActive();
     const count = useProjectCount();
+    const isLoaded = useIsLoaded();
     const lenis = useLenis();
     
     // --------------------------------------------------------
@@ -85,7 +87,8 @@ export default function Refraction() {
 
     const changeColors = useCallback((slugCheck, instant = false) => {
         const project = projectsData.projects.find(project => slugCheck.includes('project') && slugCheck.includes(project.slug));
-        if(project && count != 0){
+        console.log(project, slugCheck, count);
+        if(project){
             optionsColors.colorsNext[0].set(project.colors[0])
             optionsColors.colorsNext[1].set(project.colors[1])
             optionsColors.colorsNext[2].set(project.colors[2])
@@ -144,7 +147,9 @@ export default function Refraction() {
     }, [isMobile, uniforms]);
 
     useGSAP(() => {
-        changeColors(navigationInfo.currentPage);
+        if(navigationInfo.currentPage.includes('project')){
+            changeColors(navigationInfo.currentPage);
+        }
     },[count, navigationInfo.currentPage])
 
     // --------------------------------------------------------
@@ -155,16 +160,12 @@ export default function Refraction() {
         const { navigationType: navType, currentPage, previousPage } = navigationInfo;
 
         if (navType === 'reload' || navType === 'external') {
-            // Initial load
+            // Initial load — PROGRESS_LOADER reste à 0 jusqu'à ce que isLoaded soit true
             animLoaderRef.current?.kill();
             animProjectRef.current?.kill();
             animProjectRef.current = gsap.set(uniforms.PROGRESS_PROJECT, { 
                 value: currentPage.includes('project') ? 1 : 0 
             });
-            animLoaderRef.current = gsap.fromTo(uniforms.PROGRESS_LOADER, 
-                { value: 0 }, 
-                { value: 1, duration: 1, ease: "linear", delay: 1 }
-            );
         } 
         else if (navType === 'back' || navType === 'forward') {
             // Navigation historique
@@ -188,11 +189,24 @@ export default function Refraction() {
         }
     }, [navigationInfo.navigationType, navigationInfo.currentPage, navigationInfo.previousPage]);
 
+    // Transition shader : loader (couleur unie) → contenu réel
+    // Déclenché quand isLoaded passe à true (= temps min écoulé + scène prête)
+    useGSAP(() => {
+        if (isLoaded) {
+            animLoaderRef.current?.kill();
+            animLoaderRef.current = gsap.to(uniforms.PROGRESS_LOADER, {
+                value: 1, duration: 1, ease: "linear"
+            });
+        }
+    }, [isLoaded]);
+
     useGSAP(() => {
         const isHome = navigationInfo.currentPage === "/" || navigationInfo.currentPage == null;
         if (isHome && typeof projectHomeActive === "string" && projectHomeActive.includes("project")) {
             animProjectRef.current?.kill();
             animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 2, ease: "power4.inOut" });
+            console.log(isHome, projectHomeActive);
+
             changeColors(projectHomeActive);
 
         }

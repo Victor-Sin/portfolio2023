@@ -1,7 +1,7 @@
 "use client"
 
 import localFont from 'next/font/local'
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
@@ -12,6 +12,7 @@ import "@/app/globals.css";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { NavigationProvider, useNavigationInfo } from "@/contexts/NavigationContext";
+import { LoaderProvider, useIsLoaded, useSetSceneReady } from "@/contexts/LoaderContext";
 import { Stats } from "@react-three/drei";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -81,6 +82,57 @@ const courierNew = localFont({
   ],
 });
 
+
+// Détecte quand la scène 3D a rendu ses premiers frames
+// (= shaders compilés + textures chargées via Suspense de useTexture)
+function SceneReadyDetector() {
+  const setSceneReady = useSetSceneReady()
+  const frameCount = useRef(0)
+  const signaled = useRef(false)
+
+  useFrame(() => {
+    if (!signaled.current) {
+      frameCount.current++
+      // Attendre 2 frames : le 1er appel useFrame précède le rendu,
+      // le 2e frame garantit que le pipeline GPU est créé
+      if (frameCount.current >= 2) {
+        signaled.current = true
+        setSceneReady()
+      }
+    }
+  })
+
+  return null
+}
+
+// Overlay HTML plein écran — masque tout pendant le chargement initial
+// La couleur correspond à bgColors[0] du shader Refraction (#FDE7C5)
+function Loader() {
+  const isLoaded = useIsLoaded()
+  const [shouldRender, setShouldRender] = useState(() => !isLoaded)
+
+  useEffect(() => {
+    if (isLoaded) {
+      // Retirer du DOM après la fin de la transition CSS
+      const timer = setTimeout(() => setShouldRender(false), 600)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoaded])
+
+  if (!shouldRender) return null
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: '#FDE7C5',
+      zIndex: 9999,
+      opacity: isLoaded ? 0 : 1,
+      transition: 'opacity 0.5s ease-out',
+      pointerEvents: isLoaded ? 'none' : 'all',
+    }} />
+  )
+}
 
 function LayoutBody({ children }) {
   const { forceWebGL, ready } = useForceWebGLBackend()
@@ -157,28 +209,32 @@ function LayoutBody({ children }) {
 },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
   return (
-    <ProjectProvider>
-      <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
-      <div className={styles.canvasContainer}>
-      {ready && (
-        <Canvas 
-          style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
-          gl={async (props) => {
-            const renderer = new WebGPURenderer({ ...props, forceWebGL })
-            await renderer.init()
-            return renderer
-          }}
-          dpr={isMobile ? 1 : 1.25}
-        >
-          <Refraction />
-          <ProjectImage/>
-        </Canvas>
-      )}
-      <Stats />
-      <span className="lateralBar"></span>  
-      {children}
-      </div>
-    </ProjectProvider>
+    <LoaderProvider>
+      <ProjectProvider>
+        <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
+        <Loader />
+        <div className={styles.canvasContainer}>
+        {ready && (
+          <Canvas 
+            style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
+            gl={async (props) => {
+              const renderer = new WebGPURenderer({ ...props, forceWebGL })
+              await renderer.init()
+              return renderer
+            }}
+            dpr={isMobile ? 1 : 1.25}
+          >
+            <SceneReadyDetector />
+            <Refraction />
+            <ProjectImage/>
+          </Canvas>
+        )}
+        <Stats />
+        <span className="lateralBar"></span>  
+        {children}
+        </div>
+      </ProjectProvider>
+    </LoaderProvider>
   )
 }
 
