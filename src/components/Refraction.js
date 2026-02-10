@@ -258,6 +258,10 @@ export default function Refraction() {
             scY.y.mul(scZ.y)
         ));
         return m;
+    }).setLayout({
+        name: 'createRotationMatrix',
+        type: 'mat3',
+        inputs: [{ name: 'eulerAngles', type: 'vec3' }]
     });
 
     const generateWaveOctave = Fn(([uv_immutable, choppiness_immutable]) => {
@@ -268,6 +272,13 @@ export default function Refraction() {
         const secondary = vec2(abs(cos(uv))).toVar();
         wave.assign(mix(wave, secondary, wave));
         return pow(oneMinus(wave.x.mul(wave.y)), chop);
+    }).setLayout({
+        name: 'generateWaveOctave',
+        type: 'float',
+        inputs: [
+            { name: 'uv', type: 'vec2' },
+            { name: 'choppiness', type: 'float' }
+        ]
     });
 
     const oceanHeightMap = Fn(([p_immutable]) => {
@@ -290,11 +301,22 @@ export default function Refraction() {
         });
 
         return p.y.sub(height);
+    }).setLayout({
+        name: 'oceanHeightMap',
+        type: 'float',
+        inputs: [{ name: 'p', type: 'vec3' }]
     });
 
     const getRayDirection = Fn(([coords, angles]) => {
         const dir = vec3(normalize(vec3(vec2(coords).toVar().xy, float(-2)))).toVar();
         return normalize(dir).mul(createRotationMatrix(angles));
+    }).setLayout({
+        name: 'getRayDirection',
+        type: 'vec3',
+        inputs: [
+            { name: 'coords', type: 'vec2' },
+            { name: 'angles', type: 'vec3' }
+        ]
     });
 
     const computeLineColor = Fn(([coords, camAngles, rayOrig, limitTop, limitBot, inBetween, isLast]) => {
@@ -345,6 +367,18 @@ export default function Refraction() {
         intensity.assign(pow(intensity, float(4 / 2.2)));
 
         return step(topLimit, distCoord).mul(step(distCoord, botLimit)).mul(vec4(intensity));
+    }).setLayout({
+        name: 'computeLineColor',
+        type: 'vec4',
+        inputs: [
+            { name: 'coords', type: 'vec2' },
+            { name: 'camAngles', type: 'vec3' },
+            { name: 'rayOrig', type: 'vec3' },
+            { name: 'limitTop', type: 'float' },
+            { name: 'limitBot', type: 'float' },
+            { name: 'inBetween', type: 'float' },
+            { name: 'isLast', type: 'float' }
+        ]
     });
 
     // ============================================================
@@ -380,6 +414,13 @@ export default function Refraction() {
         });
 
         return vec2(depth, tilt);
+    }).setLayout({
+        name: 'cameraAnimation',
+        type: 'vec2',
+        inputs: [
+            { name: 'progress', type: 'float' },
+            { name: 'inBetween', type: 'float' }
+        ]
     });
 
     const cameraAnimationAlt = Fn(([progress]) => {
@@ -392,6 +433,10 @@ export default function Refraction() {
             mix(depths.element(p.y), depths.element(p.y.add(1)), p.x),
             mix(tilts.element(p.y), tilts.element(p.y.add(1)), p.x)
         );
+    }).setLayout({
+        name: 'cameraAnimationAlt',
+        type: 'vec2',
+        inputs: [{ name: 'progress', type: 'float' }]
     });
 
     const circleEffect = Fn(([uv, limits]) => {
@@ -409,6 +454,13 @@ export default function Refraction() {
         const fill = oneMinus(smoothstep(0, radius.x.mul(1.25), dist));
 
         return vec2(outer.sub(inner), fill);
+    }).setLayout({
+        name: 'circleEffect',
+        type: 'vec2',
+        inputs: [
+            { name: 'uv', type: 'vec2' },
+            { name: 'limits', type: 'vec2' }
+        ]
     });
 
     const computeLines = Fn(([progress, inBetween, uv]) => {
@@ -421,6 +473,14 @@ export default function Refraction() {
         const color = vec4(computeLineColor(uv, angles, origin, topLimit, botLimit, inBetween, float(0))).toVar();
         If(inBetween.greaterThan(0), () => color.mulAssign(0.25)).Else(() => color.mulAssign(0.5));
         return color;
+    }).setLayout({
+        name: 'computeLines',
+        type: 'vec4',
+        inputs: [
+            { name: 'progress', type: 'float' },
+            { name: 'inBetween', type: 'float' },
+            { name: 'uv', type: 'vec2' }
+        ]
     });
 
     const computeLinesAlt = Fn(([progress, inProgress, uv, inBetween]) => {
@@ -446,6 +506,10 @@ export default function Refraction() {
         });
 
         return rotate(uv, log(length(uv)).mul(0.15));
+    }).setLayout({
+        name: 'uvFlowField',
+        type: 'vec2',
+        inputs: [{ name: 'uv_in', type: 'vec2' }]
     });
 
     const colorGradient = Fn(([uv_in, colors, positions, count, colorsBis, transition = 0, useProgress = 1]) => {
@@ -483,12 +547,12 @@ export default function Refraction() {
         return finalColor.div(totalWeight);
     });
 
-    const curvedLines = Fn(() => {
+    const curvedLines = () => {
         const limit = float(20);
         const a = step(limit, screenCoordinate.x);
         const b = step(limit.add(1), screenCoordinate.x);
         return vec2(a.sub(b), b);
-    });
+    };
 
     // ============================================================
     // CONSTRUCTION DU MATERIAL
@@ -531,7 +595,7 @@ export default function Refraction() {
 
         // Effet curseur
         const cursorTex = texture(dataTextureStatic, vec2(uvGPU.x, uvY));
-        const cursor = gaussianBlur(cursorTex, null, 1).rg;
+        const cursor = gaussianBlur(cursorTex, null, 2).rg;
 
         // UVs finaux
         const rotation = oneMinus(length(shaderUV.mul(2))).mul(uniforms.PROGRESS_PROJECT).mul(.15);

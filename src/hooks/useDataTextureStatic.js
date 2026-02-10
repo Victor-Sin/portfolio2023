@@ -7,9 +7,9 @@ export default function useDataTextureStatic(
     aspectRatio = 0,
     uvClassic = false,
     radius = 0.075,
-    decayFactor = 0.975,
+    decayFactor = 0.98,
     strength = 0.5,
-    influenceGain = .75,
+    influenceGain = 1.3,
     influenceGamma = 1
 ){
     const {gl} = useThree()
