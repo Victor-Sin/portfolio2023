@@ -184,7 +184,7 @@ export default function Refraction() {
             animLoaderRef.current?.kill();
             animProjectRef.current?.kill();
             animLoaderRef.current = gsap.to(uniforms.PROGRESS_LOADER, { value: 1, duration: 1, ease: "linear", delay: 1 });
-            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 2, ease: "power4.inOut", delay: 1 });
+            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 0, duration: 5, ease: "power4.inOut" });
 
         }
     }, [navigationInfo.navigationType, navigationInfo.currentPage, navigationInfo.previousPage]);
@@ -204,7 +204,7 @@ export default function Refraction() {
         const isHome = navigationInfo.currentPage === "/" || navigationInfo.currentPage == null;
         if (isHome && typeof projectHomeActive === "string" && projectHomeActive.includes("project")) {
             animProjectRef.current?.kill();
-            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 2, ease: "power4.inOut" });
+            animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 3, ease: "power4.inOut" });
             console.log(isHome, projectHomeActive);
 
             changeColors(projectHomeActive);
@@ -400,8 +400,8 @@ export default function Refraction() {
     });
 
     const cameraAnimation = Fn(([progress, inBetween]) => {
-        const depths = array([float(-2), float(3), float(8), float(15), float(10), float(20)]);
-        const tilts = array([float(0.65), float(0.87), float(1.33), float(2), float(2.8), float(3.14)]);
+        const depths = array([float(-2), float(3), float(3.4), float(15), float(10), float(20)]);
+        const tilts = array([float(0.65), float(0.87), float(1.92), float(1.78), float(2.8), float(3.14)]);
         const breaks = array([float(0), float(0.25), float(0.5), float(0.75), float(0.9), float(1)]);
         
         const p = partitionProgress(progress, breaks, int(6));
@@ -600,7 +600,7 @@ export default function Refraction() {
         // UVs finaux
         const rotation = oneMinus(length(shaderUV.mul(2))).mul(uniforms.PROGRESS_PROJECT).mul(.15);
         const finalUV = rotate(shaderUV,rotation).add(cursor.mul(0.125));
-        const linesUV = uvFlowField(shaderUV.mul(vec2(1.35))).add(cursor.mul(0.1));
+        const linesUV = uvFlowField(shaderUV.mul(vec2(1.35))).add(cursor.mul(0.125));
         const circleUV = uvFlowField(shaderUV).add(cursor.mul(0.15));
 
         // Calcul des effets

@@ -6,7 +6,7 @@ import {DoubleSide} from "three";
 import * as THREE from 'three/webgpu'
 import {uv, positionGeometry, time, texture, float, distance, log, rotate, oneMinus, uniform, Fn, sin, cos, vec2, dot, fract, mix, Loop, normalize, step, vec4, smoothstep, length } from 'three/tsl';
 import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import { useProjectCount } from "@/contexts/ProjectContext";
+import { useProjectCount, useProjectHomeActive } from "@/contexts/ProjectContext";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import styles from '@/app/page.module.css';
@@ -16,6 +16,32 @@ import { useNavigationInfo } from "@/contexts/NavigationContext";
 import useMediaQuery from "@/hooks/useMediaQuery";
 gsap.registerPlugin(ScrollTrigger);
 
+const setupTimelines = (tlIn, tlOut, uniforms, ) => {
+    tlIn = gsap.timeline({ scrollTrigger: {
+        trigger: `.${styles.container}`,
+        toggleActions: 'play reverse play reverse',
+        start: '35% bottom',
+        end: '40% bottom',
+        scrub: true,
+    }}).fromTo(uniforms.OPACITY, {value: 0}, {
+        value: 1,
+        duration: 4,
+        ease: "linear"
+    })
+
+    tlOut = gsap.timeline({ scrollTrigger: {
+        trigger: `.${styles.container}`,
+        toggleActions: 'play reverse play reverse',
+        start: '68% bottom',
+        end: '69% bottom',
+        scrub: true,
+    }}).to(uniforms.OPACITY, {
+        value: 0,
+        duration: 4,
+        ease: "linear"
+    })
+}
+
 
 export default function ProjectImage(){
     const isMobile = useMediaQuery(768)  // < 768px
@@ -24,6 +50,7 @@ export default function ProjectImage(){
     const tlInRef = useRef(null)
     const tlOutRef = useRef(null)
     const count = useProjectCount()
+    const homeActive = useProjectHomeActive()
     const navigationInfo = useNavigationInfo()
     const prevCountRef = useRef(count)
     const animRefs = useRef([null, null, null, null, null])
@@ -106,32 +133,11 @@ export default function ProjectImage(){
             ]);
         }
     }
+    
 
     useGSAP(() => {
         if(navigationInfo.currentPage === "/"){
-            tlInRef.current = gsap.timeline({ scrollTrigger: {
-                trigger: `.${styles.container}`,
-                toggleActions: 'play reverse play reverse',
-                start: '35% bottom',
-                end: '40% bottom',
-                scrub: true,
-            }}).fromTo(uniforms.OPACITY, {value: 0}, {
-                value: 1,
-                duration: 4,
-                ease: "linear"
-            })
-
-            tlOutRef.current = gsap.timeline({ scrollTrigger: {
-                trigger: `.${styles.container}`,
-                toggleActions: 'play reverse play reverse',
-                start: '68% bottom',
-                end: '69% bottom',
-                scrub: true,
-            }}).to(uniforms.OPACITY, {
-                value: 0,
-                duration: 4,
-                ease: "linear"
-            })
+            setupTimelines(tlInRef.current, tlOutRef.current, uniforms)
         } else {
             cleanupTimelines()
         }
@@ -139,17 +145,28 @@ export default function ProjectImage(){
         return cleanupTimelines
     },[navigationInfo.currentPage])
 
+    useEffect(() => {
+        if(typeof homeActive === "string" && homeActive.includes("project")){
+            gsap.to(uniforms.OPACITY, {value: 0, duration: 1, ease: "power2.out"})
+        }
+ 
+  
+    },[homeActive])
+
     const grainTextureEffect = Fn(([_uv]) => {
         return fract(sin(dot(_uv, vec2(12.9898, 78.233))).mul(43758.5453123))
     })
 
     const transitionPattern = Fn(([c1, c2, c3, c4, c5, c6,uv_immutable]) => {
        // Wipe pattern
+       const _grain = grainTextureEffect(uv_immutable).mul(0.2)
+
+       
        const patternText = vec2(
             uv_immutable.x.add(sin(uv_immutable.y.mul(15.0)).mul(0.1)),
            uv_immutable.y.add(sin(uv_immutable.x.mul(15.0)).mul(0.1))
        );
-       const patternText2 = smoothstep(0,1,distance(patternText, vec2(0)).mul(0.45))
+       const patternText2 = smoothstep(0,1,distance(patternText, vec2(0)).mul(0.45)).add(_grain)
        const radialMask = (t) => oneMinus(step(
            t,
            patternText2
@@ -171,6 +188,8 @@ export default function ProjectImage(){
        const l4 = dirMix(l3, c4, uniforms.LAYER_T3, uniforms.DIRECTION);
        const l5 = dirMix(l4, c5, uniforms.LAYER_T4, uniforms.DIRECTION);
        const l6 = dirMix(l5, c6, uniforms.LAYER_T5, uniforms.DIRECTION);
+
+
 
         return l6
     })

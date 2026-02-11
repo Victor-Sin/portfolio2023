@@ -414,6 +414,11 @@
 
 }
 
+.anchorWork{
+    position: absolute;
+    top: 26.5%;
+}
+
 .projets{
     position: absolute;
     top: 30%;

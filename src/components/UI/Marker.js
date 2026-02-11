@@ -302,34 +302,10 @@ export default function Marker() {
 
 
   return <>
-  <p className={styles.nameProject}> VICTOR SIN</p>
-  <div className={styles.imagesFrame}>
-    <div className={`${styles.imagesFrameContainer} ${count >= 1 ? styles.active : ''}`}>
-      <img src={"/images/p1.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-    <div className={`${styles.imagesFrameContainer} ${count >= 2 ? styles.active : ''}`}>
-      <img src={"/images/p2.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-    <div className={`${styles.imagesFrameContainer} ${count >= 3 ? styles.active : ''}`}>
-      <img src={"/images/p3.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-    <div className={`${styles.imagesFrameContainer} ${count >= 4 ? styles.active : ''}`}>
-      <img src={"/images/p4.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-    <div className={`${styles.imagesFrameContainer} ${count >= 5 ? styles.active : ''}`}>
-      <img src={"/images/p5.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-    <div className={`${styles.imagesFrameContainer} ${count >= 6 ? styles.active : ''}`}>
-      <img src={"/images/p6.jpg"} alt={"project image"} />
-      <div className={styles.imagesFrameMask}></div>
-    </div>
-  </div>
-  <div className={styles.projets} id="work"> 
+  <p className={styles.nameProject}  > VICTOR SIN</p>
+  <div className={styles.anchorWork} id="work"></div>
+
+  <div className={styles.projets}> 
     <div className={styles.headStatic}>
       <h5>PROJECTS</h5>
     </div>

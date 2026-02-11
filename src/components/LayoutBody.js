@@ -145,7 +145,7 @@ export default function LayoutBody({ children }) {
   return (
     <LoaderProvider>
       <ProjectProvider>
-        <ReactLenis root options={{duration: 1.5, lerp: 2}}/>
+        <ReactLenis root options={{ duration: 2}}/>
         <Loader />
         <div className={styles.canvasContainer}>
         {ready && (
