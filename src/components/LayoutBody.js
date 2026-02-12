@@ -188,7 +188,6 @@ export default function LayoutBody({ children }) {
              <ProjectImage/>
            </Canvas>
         )}
-        <Stats />
         <Loader />
         <span className={styles.lateralBar}></span>  
         {children}

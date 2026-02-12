@@ -272,6 +272,14 @@ export default function ProjectPage({ params }) {
 
     addFadeInOutBlur(tlImages.current);
     tlImages.current
+    .fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
+      width: "100vw",
+    }, {
+      width: "0vw",
+      duration: 1.5,
+      delay: 2,
+      ease: "power3.out",
+    })
     .fadeOutBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20, duration: 1, position: "<+.25" })
     .to(`.${styles.cube}`, {
       opacity: 0,
@@ -361,6 +369,14 @@ export default function ProjectPage({ params }) {
     tlImages.current.timeScale(2);
     addFadeInOutBlur(tlImages.current);
     tlImages.current
+    .fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
+      width: "0%",
+    }, {
+      width: isMobile ? "100vw" : "100%",
+      duration: 1.5,
+      delay: 1,
+      ease: "power3.out",
+    })
     .fadeInBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20,duration:1,position: "<+.25" })
     .fromTo(`.${styles.cube}`, {
       opacity: 0,
