@@ -11,17 +11,18 @@
       "link": "https://example.com/project1",
       "imageUrl": "/images/p1.jpg",
       "imagesProject": ["/images/proj1/1.webp", "/images/proj1/2.webp"],
-      "mainContent": [" IN THIS VIDEO GAME, CRAFTED IN UNITY AS A FINAL  year project for BDDI AT GOBELINS SCHOOL OF THE IMAGE, EMBARK ON AN EPIC AND EMOTIONAL JOURNEY THROUGH THE EYES OF TWIN BROTHERS. TAKE THE TIME TO LOSE YOURSELF IN THIS BEAUTIFUL CELL-SHADED WORLD.",
-            "IN THIS VIDEO GAME, CRAFTED IN UNITY AS A FINAL year project for BDDI AT GOBELINS SCHOOL OF THE IMAGE, EMBARK ON AN EPIC AND EMOTIONAL JOURNEY THROUGH THE EYES OF TWIN BROTHERS. TAKE THE TIME TO LOSE YOURSELF IN THIS BEAUTIFUL CELL-SHADED WORLD, ENTIRELY CREATED BY OUR TEAM, AND LET YOUR IMAGINATION TAKE FLIGHT. EXPERIENCE A UNIQUE JOURNEY THROUGH THE DREAMLIKE LANDSCAPES OF STRO"],
+      "mainContent": ["This WebGL site was designed as a long-lasting celebration of Kempinski’s heritage, created for the 2025 Christmas season. The concept was to craft an interactive “time capsule” of the brand’s history, illustrating a stylized version of the very first hotel. Each window or case on the site acts as a portal — a glimpse into a story, a memory, or a moment from the past, allowing users to explore the evolution of the hotel and its legacy.",
+            "With the goal of longevity, this platform is meant to grow as a digital archive, giving the brand a permanent space to celebrate its story, while offering users a layered, memorable experience that bridges past and present."],
       "details": {
-        "credits": "IBRAHIMA KABA ; LINA ABBOUSAIR ; JESSY RANGASAMY",
-        "status": "DONE",
-        "stack": "UNITY ; C# ; SHADERGRAPH ;",
-        "job": "FRONT-END DEVELOPER ; GAME DEVELOPER ;",
-        "link": "https://example.com/project1"
+        "agency": "Vokode",
+        "position": "freelance",
+        "stack": "Three.js ; GSAP ; React.js",
+        "job": "Creative Developer ;",
+        "status": "DONE ;",
+        "link": "www.kempinski.com/en/advent-calendar"
       },
       "nextProject": "calendar-etam-2025",
-      "colors" : ["#0BD699", "#000000", "#F39089"]
+      "colors" : ["#E9DB97","#F5F1E9","#9095AD"]
     },
     {
       "id": 2,
@@ -34,17 +35,17 @@
       "link": "https://example.com/project2",
       "imageUrl": "/images/p2.jpg",
       "imagesProject": ["/images/proj2/1.webp", "/images/proj2/2.webp"],
-      "mainContent": ["A DIGITAL ADVENT CALENDAR CRAFTED FOR ETAM, THE ICONIC FRENCH LINGERIE AND FASHION BRAND. THIS IMMERSIVE WEB EXPERIENCE INVITES USERS TO DISCOVER DAILY SURPRISES THROUGH ELEGANT ANIMATIONS AND INTERACTIVE ELEMENTS.",
-            "DESIGNED TO CELEBRATE THE HOLIDAY SEASON, THE EXPERIENCE COMBINES REFINED AESTHETICS WITH PLAYFUL INTERACTIONS. EACH DAY REVEALS EXCLUSIVE CONTENT, SPECIAL OFFERS, AND CURATED SELECTIONS, CREATING A MEMORABLE JOURNEY THROUGH THE FESTIVE SPIRIT OF THE BRAND."],
+      "mainContent": ["This project was created for Etam’s 2025 Christmas campaign, extending the brand’s paper-cut book concept into a digital experience designed for social media. The site translates the tactile charm of the artist’s original creation into an interactive online format, preserving the playfulness and intricacy of each cutout.",
+            "My role included developing the site and creating custom scripts for After Effects. These scripts allowed me to extract information about the position, orientation, animations, and timelines of each element, ensuring the digital experience remained as faithful as possible to the artist’s vision."],
       "details": {
-        "credits": "VICTOR SIN ; TEAM VOKODE",
-        "status": "DONE",
-        "stack": "NEXT.JS ; THREE.JS ; GSAP ;",
-        "job": "FRONT-END DEVELOPER ; CREATIVE DEVELOPER ;",
-        "link": "https://example.com/project2"
+        "agency": "Vokode",
+        "position": "freelance",
+        "stack": "React.js ; GSAP ; Howler.js",
+        "job": "Creative Developer ;",
+        "status": "DONE ;"
       },
       "nextProject": "chanel-atelier",
-      "colors": ["#E8A0BF", "#D4C5A9", "#2C2C2C"]
+      "colors": ["#C2776D", "#4B5A49", "#F1E4D2"]
     },
     {
       "id": 3,
@@ -57,17 +58,17 @@
       "link": "https://example.com/project3",
       "imageUrl": "/images/p3.jpg",
       "imagesProject": ["/images/proj3/1.webp", "/images/proj3/2.webp", "/images/proj3/3.webp", "/images/proj3/4.webp", "/images/proj3/5.webp"],
-      "mainContent": ["AN EXCLUSIVE DIGITAL SHOWCASE FOR CHANEL'S HAUTE JOAILLERIE ATELIER, BRINGING THE MAISON'S FINEST CREATIONS TO LIFE THROUGH AN IMMERSIVE 3D EXPERIENCE. EVERY DETAIL OF THE JEWELRY PIECES IS RENDERED WITH METICULOUS PRECISION.",
-            "THE EXPERIENCE TRANSPORTS VISITORS INTO THE HEART OF CHANEL'S CREATIVE UNIVERSE, WHERE CRAFTSMANSHIP MEETS INNOVATION. THROUGH ELEGANT TRANSITIONS AND REFINED INTERACTIONS, USERS EXPLORE THE EXTRAORDINARY WORLD OF HIGH JEWELRY, DISCOVERING THE STORIES AND ARTISTRY BEHIND EACH ICONIC PIECE."],
+      "mainContent": ["In collaboration with Chanel’s internal teams, I helped create an immersive WebGL experience that allows users to explore the maison’s ateliers, iconic pieces, and high jewelry techniques. The project was designed as a long-form digital journey, giving participants the opportunity to discover the details of each jewel and understand the craftsmanship behind them.",
+            "My role focused on the development, optimization, and implementation of the 3D environment in WebGL. All assets and animations were baked to ensure smooth performance and visual fidelity. Every technical aspect — from lighting and material rendering to navigation and interactive elements — was crafted to reflect the elegance and precision of Chanel’s universe."],
       "details": {
-        "credits": "VICTOR SIN ; TEAM VOKODE",
-        "status": "DONE",
-        "stack": "THREE.JS ; WEBGL ; GSAP ; REACT ;",
-        "job": "CREATIVE DEVELOPER ; 3D WEB DEVELOPER ;",
-        "link": "https://example.com/project3"
+        "agency": "Vokode",
+        "position": "in-house",
+        "stack": "Three.js ; GSAP ; React.js",
+        "job": "Creative Developer ;",
+        "status": "DONE ;"
       },
       "nextProject": "macif",
-      "colors": ["#1A1A1A", "#D4AF37", "#F5F0E8"]
+      "colors": ["#BCD9F0", "#D4AF37", "#F5F0E8"]
     },
     {
       "id": 4,
@@ -80,17 +81,18 @@
       "link": "https://example.com/project4",
       "imageUrl": "/images/p4.jpg",
       "imagesProject": ["/images/proj4/1.webp", "/images/proj4/2.webp", "/images/proj4/3.webp", "/images/proj4/4.webp", "/images/proj4/5.webp"],
-      "mainContent": ["AN INTERACTIVE WEB EXPERIENCE DEVELOPED FOR MACIF, ONE OF FRANCE'S LEADING INSURANCE PROVIDERS. THIS PROJECT TRANSFORMS THE CONCEPT OF HOME INSURANCE INTO A VISUALLY ENGAGING AND EDUCATIONAL DIGITAL JOURNEY.",
-            "USERS NAVIGATE THROUGH A VIRTUAL HOUSE, DISCOVERING VARIOUS INSURANCE SCENARIOS AND COVERAGE OPTIONS IN AN INTUITIVE AND PLAYFUL MANNER. THE EXPERIENCE LEVERAGES 3D ENVIRONMENTS AND SMOOTH ANIMATIONS TO MAKE INSURANCE ACCESSIBLE AND ENGAGING FOR ALL AUDIENCES."],
+      "mainContent": ["For Macif, we designed an immersive digital game inviting users to explore an interactive house. The goal was to discover key objects that reveal how Macif supports its clients in their daily lives, in a playful and engaging way.",
+            "My role focused on development and UI implementation, ensuring the interface aligned perfectly with Macif’s design system. All assets and textures were baked for optimal performance, allowing the 3D environment to feel smooth, responsive, and visually clear.",
+          "The final experience blends gamification, interactive storytelling, and brand education, offering users a memorable journey through Macif’s values and services, all within an engaging and intuitive digital environment."],
       "details": {
-        "credits": "VICTOR SIN ; TEAM VOKODE",
-        "status": "DONE",
-        "stack": "THREE.JS ; REACT ; GSAP ; WEBGL ;",
-        "job": "CREATIVE DEVELOPER ; FRONT-END DEVELOPER ;",
-        "link": "https://example.com/project4"
+        "agency": "Vokode",
+        "position": "in-house",
+        "stack": "Three.js ; GSAP ; React.js ; Howler.js",
+        "job": "Creative Developer ;",
+        "status": "DONE ;"
       },
       "nextProject": "IX-CHEL-ET-KIN",
-      "colors": ["#0055A4", "#5BC0BE", "#F2F2F2"]
+      "colors": ["#D1D3C5","#6C6E85", "#99B19C"]
     },
     {
       "id": 5,
@@ -103,17 +105,18 @@
       "link": "https://example.com/project5",
       "imageUrl": "/images/p5.jpg",
       "imagesProject": ["/images/proj5/1.webp", "/images/proj5/2.webp", "/images/proj5/3.webp", "/images/proj5/4.webp", "/images/proj5/5.webp"],
-      "mainContent": ["AN INTERACTIVE INSTALLATION INSPIRED BY MAYAN MYTHOLOGY, EXPLORING THE DUALITY BETWEEN IX CHEL, GODDESS OF THE MOON, AND KIN, GOD OF THE SUN. THIS PROJECT, CREATED AS PART OF THE CURRICULUM AT GOBELINS SCHOOL OF THE IMAGE, BLENDS ART AND TECHNOLOGY.",
-            "VISITORS ARE INVITED TO INTERACT WITH PROJECTED VISUALS AND PHYSICAL ELEMENTS, TRIGGERING CELESTIAL ANIMATIONS AND SOUNDSCAPES THAT BRING THE ANCIENT MYTHS TO LIFE. THE INSTALLATION CREATES AN IMMERSIVE SENSORY EXPERIENCE WHERE LIGHT AND SHADOW DANCE IN HARMONY WITH THE AUDIENCE'S MOVEMENTS."],
+      "mainContent": ["“IX CHEL ET KIN” is a custom-built interactive installation that tells the story of the sun god and the moon goddess. The experience invites participants to place magnetized objects onto a surface, where each object is detected, identified, and tracked in real time to trigger visual and narrative interactions.",
+            "Built using Three.js with a strong emphasis on 2D visuals, the project relies on a handcrafted system developed entirely from scratch. My role was centered on research and development: exploring and comparing technical possibilities, eliminating solutions that were either too costly or unfeasible, and designing accessible alternatives through extensive prototyping and testing.",
+          "I worked on the full interactive pipeline — from Arduino data optimization and signal processing to the development of the installation and web interface using Python.",
+        "“IX CHEL ET KIN” stands as a deeply experimental, handmade system, where technology, mythology, and interaction merge into a tangible and immersive installation."],
       "details": {
-        "credits": "VICTOR SIN ; GOBELINS TEAM",
+        "credits": "Agathe BOSCH ; Abishek Balasubramanian ; Affo Hamzine ; Fiona Ballaret ; Victor Sin",
         "status": "DONE",
-        "stack": "TOUCH DESIGNER ; ARDUINO ; PROCESSING ;",
-        "job": "CREATIVE DEVELOPER ; INSTALLATION DESIGNER ;",
-        "link": "https://example.com/project5"
+        "stack": "NODE.JS ; THREE.JS ; ARDUINO ; Node.js ; Socket.io",
+        "job": "Creative Developer ; R&D ; Interactive Systems & Prototyping"
       },
       "nextProject": "VRAIMENT",
-      "colors": ["#E8732A", "#F5C842", "#2B1055"]
+      "colors": ["#EEE5DF", "#F3AD8D", "#615A6B"]
     },
     {
       "id": 6,
@@ -126,17 +129,17 @@
       "link": "https://example.com/project6",
       "imageUrl": "/images/p6.jpg",
       "imagesProject": ["/images/proj6/1.webp", "/images/proj6/2.webp", "/images/proj6/3.webp", "/images/proj6/4.webp", "/images/proj6/5.webp"],
-      "mainContent": ["A HYBRID BOARD GAME AND COMPANION APP DESIGNED TO CHALLENGE PLAYERS' PERCEPTION OF TRUTH AND DECEPTION. CREATED AS A SCHOOL PROJECT AT GOBELINS, VRAIMENT? BRINGS A FRESH TWIST TO SOCIAL DEDUCTION GAMES.",
-            "PLAYERS GATHER AROUND THE PHYSICAL BOARD AND USE THE COMPANION APP TO GENERATE SCENARIOS, TRACK SCORES, AND UNLOCK SPECIAL GAME EVENTS. THE SEAMLESS BLEND OF TANGIBLE AND DIGITAL GAMEPLAY CREATES A UNIQUE SOCIAL EXPERIENCE THAT SPARKS DEBATE, LAUGHTER, AND UNFORGETTABLE MOMENTS AMONG FRIENDS."],
+      "mainContent": ["As part of my final year at Gobelins in 2024, we developed “VraiMent?”, an innovative board game exploring memory, storytelling, and artificial intelligence. In this multiplayer game, players take turns sharing a personal memory with an AI assistant (powered by OpenAI’s API), which guides them through a structured conversation to capture key details and generate a fictional version of their memory. Two images are then produced — one representing the real memory and one the AI-generated fictional counterpart — and players must convince others which image corresponds to their actual memory.",
+            "My role encompassed prototyping the game logic, integrating the AI API, developing the digital interface, and conducting user tests with board game enthusiasts to iterate and refine the experience. The project also aimed to provoke reflection on the handling of personal data by AI and the ethical considerations around image generation and artistic styles.",
+          "“VraiMent?” invites players to engage creatively with AI, question the boundaries of memory and authorship, and experience storytelling in a playful yet thought-provoking way, bridging human imagination and artificial intelligence in an interactive format."],
       "details": {
-        "credits": "VICTOR SIN ; GOBELINS TEAM",
+        "credits": "Agathe BOSCH ; Chanel BITTON ; Wendy Paulos ; Nicolas Neveu ; Victor Sin",
         "status": "DONE",
-        "stack": "REACT NATIVE ; FIGMA ; ILLUSTRATOR ;",
-        "job": "UI/UX DESIGNER ; MOBILE DEVELOPER ;",
-        "link": "https://example.com/project6"
+        "stack": "Next.js ; GSAP; Howler.js ; Socket.io ; Node.js ; xState",
+        "job": "Back-end Development ; Interactive 3D ; AI Experimentation"
       },
       "nextProject": "calendar-kempinski-2025",
-      "colors": ["#FF6B6B", "#4ECDC4", "#FFE66D"]
+      "colors": ["#717397", "#A48DAD", "#FFFFFF"]
     }
   ]
 }

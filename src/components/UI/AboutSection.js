@@ -110,9 +110,8 @@ export default function AboutSection() {
           </li>
           <ul>
             <li>
-              <p>- <strong>FRONT-END DEVELOPMENT</strong> : SASS ; JS ;
-                TYPESCRIPT; REACT.JS REACT NATIVE ;
-                ANGULAR; GSAP; THREE.JS; UNITY
+              <p>- <strong>FRONT-END DEVELOPMENT</strong> : JS ;
+                 REACT.JS ; REACT NATIVE ; NEXT.JS ; GSAP ; THREE.JS ; PYTHON ; ARDUINO ; UNITY
               </p>
             </li>
           </ul>
@@ -124,9 +123,7 @@ export default function AboutSection() {
           </ul>
         </ul>
         <p className={styles.presentation}>
-          I am Victor Sin, a Creative Developer based in Paris. I thrive in creating immersive experiences between the 
-          reality and digital. Whether it&apos;s through the intricate patterns of Three.js or the limitless possibilities 
-          of Unity, I delight in bringing life to a range of platforms - from installations and video games to dynamic websites. With an eye for composition, I also delve into web and game design, as part of my approach to creating memorable and sensational experiences.
+         I’m Victor Sin, a creative developer based in Paris, graduated from Gobelins Paris. I blend interactive design and engineering to build immersive experiences — from expressive WebGL interfaces to interactive games and installations. I see every project as an opportunity to experiment, explore new ideas, and merge motion, intention, and clarity, bringing concepts to life with both technical precision and creative sensitivity.
         </p>
       </div>
       <p className={styles.copyright}>

@@ -81,7 +81,7 @@ export default function HomeSection() {
 
   return (
     <section className={styles.home} id="contact">
-      <h2>TO CREATE TAILORED, MEANINGFUL EXPERIENCES. Deep brand INSIGHTS CREATE A UNIQUELY POWERFUL THAT NO ONE HAS ATTEMPTED, WE DELVE INTO PHILOSOPHY TO CREATE TAILORED, MEANINGFUL EXPERIENCES, DEEP BRAND INSIGHTS CREATE A UNIQUELY POWERFUL </h2>
+      <h2>A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful. </h2>
       <span className={styles.middleLine}></span>
       <Navigation 
         variant={isMobile ? "homeMobile" : "home"} 
@@ -109,8 +109,8 @@ export default function HomeSection() {
           <li>
             <ul>
               <li>- WEB DEVELOPMENT</li>
-              <li>- UI/UX DESIGN</li>
-              <li>- INTERACTIVE EXPERIENCES</li>
+              <li>- INTERACTIVE INSTALLATION</li>
+              <li>- WEBGPU & WEBGL EXPERIENCES</li>
             </ul>
           </li>
         </ul>
