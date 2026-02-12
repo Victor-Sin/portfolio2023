@@ -226,12 +226,12 @@ export default function Refraction() {
     // Constantes ocean
     const WAVE_CONFIG = {
         DISTANCE_BETWEEN_LINES: float(0.15),
-        GEO_ITERATIONS: int(2),
+        GEO_ITERATIONS: int(isMobile ? 1 : 2),
         BASE_HEIGHT: float(1.25),
         CHOPPINESS: float(5),
         ANIM_SPEED: float(1.8),
         FREQUENCY: float(0.075),
-        RAYMARCH_STEPS: int(2),
+        RAYMARCH_STEPS: int(isMobile ? 1 : 2),
         OCTAVE_MATRIX: mat2(1.6, 1.2, float(-1.2), 1.6),
     };
 
@@ -555,7 +555,7 @@ export default function Refraction() {
     });
 
     const curvedLines = () => {
-        const limit = float(20);
+        const limit = float(20 * gl.getPixelRatio());
         const a = step(limit, screenCoordinate.x);
         const b = step(limit.add(1), screenCoordinate.x);
         return vec2(a.sub(b), b);
@@ -600,9 +600,10 @@ export default function Refraction() {
         const centered = vec2(uvGPU.mul(2).sub(1)).toVar();
         const shaderUV = vec2(centered.x.mul(uniforms.ASPECT), centered.y).toVar();
 
-        // Effet curseur
-        const cursorTex = texture(dataTextureStatic, vec2(uvGPU.x, uvY));
-        const cursor = gaussianBlur(cursorTex, null, 2).rg;
+        // Effet curseur (skip gaussianBlur sur mobile — la texture est vide)
+        const cursor = isMobile
+            ? vec2(0)
+            : gaussianBlur(texture(dataTextureStatic, vec2(uvGPU.x, uvY)), null, 2).rg;
 
         // UVs finaux
         const rotation = oneMinus(length(shaderUV.mul(2))).mul(uniforms.PROGRESS_PROJECT).mul(.15);
@@ -651,7 +652,7 @@ export default function Refraction() {
         buildShader(materialRef.current);
         materialRef.current.needsUpdate = true;
         return materialRef.current;
-    }, [textureVersion, dataTextureStatic]);
+    }, [textureVersion, dataTextureStatic, isMobile]);
 
     const planeZ = 1;
     const { width, height } = viewport.getCurrentViewport(camera, [0, 0, planeZ]);

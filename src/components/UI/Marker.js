@@ -25,7 +25,6 @@ export default function Marker() {
   const router = useRouter();
   const {contextSafe} = useGSAP()
   const isMobile = useMediaQuery(768)
-  const [resizeKey, setResizeKey] = useState(0)
   const lenis = useLenis()
 
   
@@ -52,22 +51,6 @@ export default function Marker() {
       return () => clearTimeout(timer);
     }
   }, [count]);
-
-  // Kill + recréation des animations au resize (debounced)
-  useEffect(() => {
-    let debounceTimer
-    const handleResize = () => {
-      clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(() => {
-        setResizeKey(k => k + 1)
-      }, 250)
-    }
-    window.addEventListener('resize', handleResize, { passive: true })
-    return () => {
-      clearTimeout(debounceTimer)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
 
   const animProject = useCallback(() => {
     
@@ -282,7 +265,7 @@ export default function Marker() {
         marker6
       ]);
     };
-  }, [isMobile, resizeKey]);
+  }, [isMobile]);
 
   const handleClick = contextSafe(() => {
     lenis.stop()

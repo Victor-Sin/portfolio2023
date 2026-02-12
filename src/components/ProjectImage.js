@@ -269,7 +269,7 @@ export default function ProjectImage(){
         const blurredColor = gaussianBlur(chromaticAberrationEffect({inputUV2:flowflied,inputUV:uv().add(uvTest.mul(.25)), strength: 0.0025}).add(uvTest.mul(0.25)), null, isMobile ? 1 : 2)
         
         // Créer le vec4 final avec l'alpha de la texture originale
-        const finalColor = vec4(blurredColor.rgb.mul(0.95).add(_grain), oneMinus(strengthbis).mul(uniforms.OPACITY))
+        const finalColor = vec4(blurredColor.rgb.mul(0.95), oneMinus(strengthbis).mul(uniforms.OPACITY))
 
         mat.colorNode = finalColor
         mat.positionNode = positionGeometry.add(length(uvTest))

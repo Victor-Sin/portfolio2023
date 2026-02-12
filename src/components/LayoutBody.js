@@ -1,5 +1,6 @@
 "use client"
 
+import "@/lib/webgpu-polyfill";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
@@ -180,13 +181,14 @@ export default function LayoutBody({ children }) {
               await renderer.init()
               return renderer
             }}
-            dpr={isMobile ? 1 : 1.25}
+            dpr={1.5}
           >
             <SceneReadyDetector />
             <Refraction />
              <ProjectImage/>
            </Canvas>
         )}
+        <Stats />
         <Loader />
         <span className={styles.lateralBar}></span>  
         {children}
