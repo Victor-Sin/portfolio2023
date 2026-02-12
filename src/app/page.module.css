@@ -555,7 +555,7 @@
         display: inline-block;
         mix-blend-mode: color-burn;
 
-        & > h5{
+        & > h2{
             text-align: right;
             font-weight: bold;
             color: #59542d;
@@ -583,7 +583,7 @@
             flex-direction: column;
             gap: 0em;
         }
-        & .infosContent > h5{
+        & .infosContent > h3{
             font-size: inherit;
             font-size: 1.15rem;
             margin-bottom: 0.5em;
@@ -864,11 +864,11 @@
             flex-direction: column;
             gap: 1.5em;
             max-width: 70%;
-            & > ul {
+            & > li > ul {
                 list-style: none;
                 max-width: 25em;
             }
-            & h5 {
+            & h3 {
                 font-weight: bold;
             }
         }

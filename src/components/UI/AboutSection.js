@@ -107,38 +107,44 @@ export default function AboutSection() {
       />
       <h2>ABOUT ME</h2>
       <div className={styles.lineContainer}>
-        <span className={styles.middleLine}></span>
+        <span className={styles.middleLine} aria-hidden="true"></span>
       </div>
       <div className={styles.aboutContent}>
         <ul>
           <li>
-            <h5>(+) SKILLS</h5>
+            <h3>(+) SKILLS</h3>
           </li>
-          <ul>
-            <li>
-              <p>- <strong>FRONT-END DEVELOPMENT</strong> : JS ;
-                 REACT.JS ; REACT NATIVE ; NEXT.JS ; GSAP ; THREE.JS ; PYTHON ; ARDUINO ; UNITY
-              </p>
-            </li>
-          </ul>
-          <ul>
-            <li>
-              <p>- <strong>BACK-END DEVELOPMENT</strong> : PHP ;
-                LARAVEL ; MYSQL ; POSTGRESQL ; NODE.JS</p>
-            </li>
-          </ul>
+          <li>
+            <ul>
+              <li>
+                <p>- <strong>FRONT-END DEVELOPMENT</strong> : JS ;
+                   REACT.JS ; REACT NATIVE ; NEXT.JS ; GSAP ; THREE.JS ; PYTHON ; ARDUINO ; UNITY
+                </p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <ul>
+              <li>
+                <p>- <strong>BACK-END DEVELOPMENT</strong> : PHP ;
+                  LARAVEL ; MYSQL ; POSTGRESQL ; NODE.JS</p>
+              </li>
+            </ul>
+          </li>
         </ul>
         <p className={styles.presentation}>
          I’m Victor Sin, a creative developer based in Paris, graduated from Gobelins Paris. I blend interactive design and engineering to build immersive experiences — from expressive WebGL interfaces to interactive games and installations. I see every project as an opportunity to experiment, explore new ideas, and merge motion, intention, and clarity, bringing concepts to life with both technical precision and creative sensitivity.
         </p>
       </div>
-      <p className={styles.copyright}>
-        <span> © </span> VICTOR SIN 2026
-      </p>
-      <p className={styles.designedBy}>[ DESIGNED BY VALERIA FLORARIU ]</p>
-      <p className={styles.date}>
-        <Clock />
-      </p>
+      <footer>
+        <p className={styles.copyright}>
+          <span> © </span> VICTOR SIN 2026
+        </p>
+        <p className={styles.designedBy}>[ DESIGNED BY VALERIA FLORARIU ]</p>
+        <p className={styles.date}>
+          <Clock />
+        </p>
+      </footer>
     </section>
   );
 }

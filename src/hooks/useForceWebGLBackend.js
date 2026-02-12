@@ -23,12 +23,7 @@ export default function useForceWebGLBackend() {
       /Apple/.test(vendor) ||
       (/Safari/.test(ua) && !/Chrome/.test(ua))
 
-    //const isChromium = /Chrome|Chromium|Edg|OPR/i.test(ua)
-    const isChromium = false
-
-    const shouldForce = !hasWebGPU || !!isSafari || !!isChromium
-
-    console.log({ hasWebGPU, isSafari, isChromium, shouldForce }, "FORCE WEBGL BACKEND")
+    const shouldForce = !hasWebGPU || !!isSafari
 
     setState({ forceWebGL: shouldForce, ready: true })
   }, [])

@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
 import Clock from '@/components/UI/Clock/Clock'
 import styles from '@/app/page.module.css'
 
@@ -19,8 +18,6 @@ export default function Navigation({
   onItemClick,
   customStyles = {}
 }) {
-  const router = useRouter()
-
   const navItems = [
     { label: 'WORK', id: 'work' },
     { label: 'CONTACT', id: 'contact' },
@@ -39,7 +36,7 @@ export default function Navigation({
   const showClock = variant.includes('home')
 
   return (
-    <nav className={customStyles.nav || ''}>
+    <nav className={customStyles.nav || ''} aria-label={`${variant} navigation`}>
       {showTitle && <h3>VICTOR SIN</h3>}
       <ul className={customStyles.ul || ''}>
         {navItems.map((item) => {
@@ -47,9 +44,10 @@ export default function Navigation({
           return (
             <li key={item.id}>
               <a 
-                href="#" 
+                href={`#${item.id}`} 
                 className={isSelected ? (customStyles.selected || styles.selected) : ''}
                 style={{textDecoration: item.id === "lab" ? "line-through" : "none"}}
+                aria-current={isSelected ? "page" : undefined}
                 onClick={(e) => {
                   e.preventDefault()
                   if(item.id !== "lab"){

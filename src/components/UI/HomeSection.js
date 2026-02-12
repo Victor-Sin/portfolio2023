@@ -3,7 +3,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import styles from '@/app/page.module.css';
-import Clock from '@/components/UI/Clock/Clock';
 import Meter from '@/components/UI/Meter';
 import { animateSplitTextWords, animateNav, animateBlurFadeIn, cleanupAnimations } from '@/utils/gsapHelpers';
 import Navigation from '@/components/UI/Navigation';
@@ -87,7 +86,7 @@ export default function HomeSection() {
   return (
     <section className={styles.home} id="contact">
       <h2>A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful. </h2>
-      <span className={styles.middleLine}></span>
+      <span className={styles.middleLine} aria-hidden="true"></span>
       <Navigation 
         variant={isMobile ? "homeMobile" : "home"} 
         selectedItem="HOME"
@@ -100,9 +99,9 @@ export default function HomeSection() {
           <li>(+) CONTACT</li>
           <li >
             <ul className={styles.contact}>
-              <li>- SIN.VICTOR@OUTLOOK.FR</li>
-              <li>- <a href="https://www.linkedin.com/in/victor-sin-/">LinkedIn</a></li>
-              <li>- <a href="https://www.twitter.com/victor_sin_/">Twitter</a></li>
+              <li>- <a href="mailto:SIN.VICTOR@OUTLOOK.FR">SIN.VICTOR@OUTLOOK.FR</a></li>
+              <li>- <a href="https://www.linkedin.com/in/eneiryth/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+              <li>- <a href="https://x.com/_VictorSIN" target="_blank" rel="noopener noreferrer">Twitter</a></li>
             </ul>
           </li>
           <li>(+) WHERE</li>

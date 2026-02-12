@@ -1,6 +1,5 @@
 import { gsap } from 'gsap';
 import { SplitText } from "gsap/SplitText";
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(SplitText);
 
@@ -377,54 +376,6 @@ export function animateButtonContainer(selector, buttonSelector, scrollTriggerCo
     }, "<+.35");
 
   return buttonStartTl;
-}
-
-/**
- * Animation pour le marker avec changement de taille
- * @param {string} selector - Sélecteur CSS du marker
- * @param {Object} scrollTriggerConfig - Configuration du ScrollTrigger (peut être null si utilisé dans une timeline)
- * @param {Object} sizeConfig - Configuration de la taille
- * @param {string} sizeConfig.fromWidth - Largeur initiale (défaut: "100px")
- * @param {string} sizeConfig.fromHeight - Hauteur initiale (défaut: "100px")
- * @param {string} sizeConfig.toWidth - Largeur finale (défaut: "0px")
- * @param {string} sizeConfig.toHeight - Hauteur finale (défaut: "0px")
- * @param {gsap.core.Timeline} sizeConfig.timeline - Timeline GSAP à utiliser (optionnel)
- * @param {string} sizeConfig.position - Position dans la timeline (ex: "<+.15")
- * @returns {Object|gsap.core.Timeline} - Objet contenant { animation, scrollTrigger } ou timeline si fournie
- */
-export function animateMarker(selector, scrollTriggerConfig, sizeConfig = {}) {
-  const {
-    fromWidth = "100px",
-    fromHeight = "100px",
-    toWidth = "0px",
-    toHeight = "0px",
-    timeline,
-    position
-  } = sizeConfig;
-
-  const animationConfig = {
-    width: toWidth,
-    height: toHeight,
-  };
-
-  if (scrollTriggerConfig && !timeline) {
-    animationConfig.scrollTrigger = scrollTriggerConfig;
-  }
-
-  if (timeline) {
-    const animation = timeline.fromTo(selector, {
-      width: fromWidth,
-      height: fromHeight,
-    }, animationConfig, position);
-    return timeline;
-  } else {
-    const animation = gsap.fromTo(selector, {
-      width: fromWidth,
-      height: fromHeight,
-    }, animationConfig);
-
-    return { animation, scrollTrigger: animation.scrollTrigger || null };
-  }
 }
 
 /**

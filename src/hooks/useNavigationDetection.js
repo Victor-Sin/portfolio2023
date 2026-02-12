@@ -160,7 +160,6 @@ export default function useNavigationDetection() {
             navigationStateRef.current.isInitialized = true
             navigationStateRef.current.historyLength = window.history.length
             navigationStateRef.current.lastHistoryLength = window.history.length
-            console.log('Navigation Info (Initial):', initialInfo)
             return
         }
 
@@ -170,13 +169,6 @@ export default function useNavigationDetection() {
             let previousPath = previousPathnameRef.current
             let navType = 'navigate'
             
-            // Debug: vérifier les valeurs
-            console.log('Navigation detection:', {
-                currentPathname: pathname,
-                previousPathnameRef: previousPathnameRef.current,
-                history: [...navigationHistoryRef.current]
-            })
-
             // Si on a détecté un popstate, c'est un back ou forward
             if (navigationStateRef.current.isPopState) {
                 const backForwardType = detectBackForward()
@@ -232,7 +224,6 @@ export default function useNavigationDetection() {
             setNavigationInfo(newInfo)
             previousPathnameRef.current = pathname
             navigationStateRef.current.lastHistoryLength = window.history.length
-            console.log('Navigation Info:', newInfo)
         }
     }, [pathname])
 

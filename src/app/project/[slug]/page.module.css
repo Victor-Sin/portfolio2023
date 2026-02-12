@@ -161,7 +161,7 @@
                 margin-top: 4rem;
                 margin-left: calc(20px + 2rem);
             }
-            & h3 {
+            & h1 {
                 font-size: clamp(4.25rem, 5vw, 8.33rem);
                 font-weight: 400;
                 font-family: var(--font-parasitype);

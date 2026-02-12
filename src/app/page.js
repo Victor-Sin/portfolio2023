@@ -1,6 +1,5 @@
 "use client"
 import styles from "@/app/page.module.css";
-import React from 'react';
 import HeroSection from "@/components/UI/HeroSection";
 import HomeSection from "@/components/UI/HomeSection";
 import AboutSection from "@/components/UI/AboutSection";
@@ -14,9 +13,6 @@ export default function Home() {
   const navigationInfo = useNavigationInfo()
     useGSAP(() => {
       const navType = navigationInfo.navigationType
-      const currentPage = navigationInfo.currentPage
-      const previousPage = navigationInfo.previousPage
-      console.log(navType, currentPage, previousPage,"PAGE NAVIGATION")
 
       if(navType === 'navigate'){
           gsap.fromTo(`.${styles.container}`, {

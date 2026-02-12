@@ -9,7 +9,7 @@ import { useGSAP } from '@gsap/react';
 import { gsap } from "gsap";
 import { useProjectSetHomeActive, useProjectSetCount, useProjectCount } from '@/contexts/ProjectContext';
 import Navigation from '@/components/UI/Navigation';
-import { animateNav, animateSplitTextChars, animateSplitTextWords, addFadeInOutBlur } from '@/utils/gsapHelpers';
+import { animateNav, animateSplitTextChars, addFadeInOutBlur } from '@/utils/gsapHelpers';
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import useMediaQuery from "@/hooks/useMediaQuery"
 import Image from 'next/image'
@@ -51,9 +51,9 @@ export default function ProjectPage({ params }) {
       position: "<+.15",
     });
 
-    gsap.set(`.${styles.projectDetails} h3`, { opacity: 1 });
+    gsap.set(`.${styles.projectDetails} h1`, { opacity: 1 });
 
-    animateSplitTextChars(`.${styles.projectDetails} h3`, {
+    animateSplitTextChars(`.${styles.projectDetails} h1`, {
       duration: 2,
       delay: 0,
       staggerAmount: 0.75,
@@ -250,7 +250,7 @@ export default function ProjectPage({ params }) {
 
     tl.current = gsap.timeline({ onComplete: checkComplete });
     tl.current.timeScale(2);
-    tl.current.to(`.${styles.projectDetails} h3`, {
+    tl.current.to(`.${styles.projectDetails} h1`, {
       opacity: 0,
       filter: "blur(20px)",
       duration: 2,
@@ -316,9 +316,9 @@ export default function ProjectPage({ params }) {
     tl.current = gsap.timeline();
     tl.current.timeScale(2);
 
-    gsap.set(`.${styles.projectDetails} h3`, { opacity: 1 });
+    gsap.set(`.${styles.projectDetails} h1`, { opacity: 1 });
 
-    animateSplitTextChars(`.${styles.projectDetails} h3`, {
+    animateSplitTextChars(`.${styles.projectDetails} h1`, {
       duration: 2,
       delay: 0,
       staggerAmount: 0.75,
@@ -430,7 +430,7 @@ export default function ProjectPage({ params }) {
   })
 
   return (
-    <div className={styles.projectPage}>
+    <article className={styles.projectPage}>
       <div className={`${styles.mobileClock} ${styles.date}`}>
         <Clock></Clock>
       </div>
@@ -445,7 +445,7 @@ export default function ProjectPage({ params }) {
           <span className={styles.middleLine}></span>
         </div>
         <div className={styles.projectDetails}>
-          <h3>{project.innerTitle}</h3>
+          <h1>{project.innerTitle}</h1>
           <div className={styles.projectInfo}>
             <div className={styles.projectDescription}>
               {project.mainContent.map((content, index) => (
@@ -457,9 +457,9 @@ export default function ProjectPage({ params }) {
                 </button>
               </div>
             </div>
-            <div className={styles.date}>
+            <time className={styles.date}>
             {project.date}
-            </div>
+            </time>
           </div>
         </div>
 
@@ -481,7 +481,7 @@ export default function ProjectPage({ params }) {
             <div className={styles.projDescription}>
               {
                 Object.keys(project.details).map((detail, index) => (
-                  <p key={index}><b>{detail} : </b> {project.details[detail]}</p>
+                  <p key={index}><strong>{detail} : </strong> {project.details[detail]}</p>
                 ))
               }
             </div>
@@ -489,12 +489,12 @@ export default function ProjectPage({ params }) {
           <div className={styles.imageContainer}>
             {project.imagesProject.map((image, index) => (
               <div className={styles.imageFrame} key={index}>
-                <Image src={image} alt={`Image ${index + 1}`} width={1000} height={1000} />
+                <Image src={image} alt={`${project.title} — image ${index + 1}`} width={1000} height={1000} />
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

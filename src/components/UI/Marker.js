@@ -247,8 +247,6 @@ export default function Marker() {
       ]
     );
 
-    const [marker1, marker2, marker3, marker4, marker5, marker6] = markerTriggers;
-
     return () => {
       cleanupAnimations([
         { timeline: pinTimeline, scrollTrigger: pinTimeline.scrollTrigger },
@@ -257,12 +255,7 @@ export default function Marker() {
         { timeline: tlHeadEnd, scrollTrigger: tlHeadEnd.scrollTrigger },
         { timeline: tlInfosEnd, scrollTrigger: tlInfosEnd.scrollTrigger },
         { timeline: buttonStartTl, scrollTrigger: buttonStartTl.scrollTrigger },
-        marker1,
-        marker2,
-        marker3,
-        marker4,
-        marker5,
-        marker6
+        ...markerTriggers
       ]);
     };
   }, [isMobile]);
@@ -312,11 +305,11 @@ export default function Marker() {
 
   <div className={styles.projets}> 
     <div className={styles.headStatic}>
-      <h5>PROJECTS</h5>
+      <h2>PROJECTS</h2>
     </div>
     <div className={styles.infos} ref={infosRef}>
       <div className={styles.infosContent}>
-        <h5>{currentProject.title}</h5>
+        <h3>{currentProject.title}</h3>
         <p className={styles.date}>{currentProject.date}</p>
         <p className={styles.client}>{currentProject.client}</p>    
       </div>
@@ -326,9 +319,9 @@ export default function Marker() {
 
 
     <div className={styles.buttonContainer}>
-    <button ref={buttonRef} onClick={handleClick}>        
-         <span>LEARN MORE</span>
-    </button>
+      <button ref={buttonRef} onClick={handleClick} aria-label={`Learn more about ${currentProject.title}`}>        
+          <span>LEARN MORE</span>
+      </button>
     </div>
     <div className={styles.counter}>
       [ 0<span 

@@ -44,19 +44,3 @@ export default function useMediaQuery(breakpoint = 768) {
 
   return isBelowBreakpoint
 }
-
-/**
- * Hook spécialisé pour détecter mobile (seuil à 768px)
- * @returns {boolean} - true si sur mobile
- */
-export function useIsMobile() {
-  return useMediaQuery(768)
-}
-
-/**
- * Hook spécialisé pour détecter tablette et mobile (seuil à 1024px)
- * @returns {boolean} - true si sur tablette ou mobile
- */
-export function useIsTabletOrMobile() {
-  return useMediaQuery(1024)
-}

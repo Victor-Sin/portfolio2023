@@ -7,12 +7,10 @@ import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
 import { useEffect, useState, useRef, startTransition } from 'react'
 import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
-import useMediaQuery from "@/hooks/useMediaQuery";
 import ProjectImage from "@/components/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { LoaderProvider, useIsLoaded, useSetSceneReady } from "@/contexts/LoaderContext";
-import { Stats } from "@react-three/drei";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import styles from "@/app/page.module.css";
@@ -50,20 +48,19 @@ function Loader() {
   useEffect(() => {
     if (!isLoaded) return
 
-    const tl = gsap.timeline()
-
-    tl.to(loaderRef.current, {
+    const tween = gsap.to(loaderRef.current, {
       opacity: 0,
       duration: 1,
+      delay: 0.3,
       ease: 'power2.out',
       onComplete: () => {
         if (loaderRef.current) {
           loaderRef.current.style.pointerEvents = 'none'
         }
       }
-    }, '+=0.3')
+    })
 
-    return () => tl.kill()
+    return () => tween.kill()
   }, [isLoaded])
 
   return (
@@ -80,7 +77,6 @@ function Loader() {
 
 export default function LayoutBody({ children }) {
   const { forceWebGL, ready } = useForceWebGLBackend()
-  const isMobile = useMediaQuery(768)
   const [canvasDeferred, setCanvasDeferred] = useState(false)
 
   // Différer le montage du Canvas pour laisser le HTML/CSS se peindre
@@ -97,9 +93,7 @@ export default function LayoutBody({ children }) {
       return () => cancelAnimationFrame(rafId)
     }
   }, [ready])
-  const lenis = useLenis((lenis) => {
-    // called every scroll
-  })
+  const lenis = useLenis()
 
 
   useEffect(() => {
@@ -151,9 +145,6 @@ export default function LayoutBody({ children }) {
   }, [lenis, navigationInfo.currentPage])
   useGSAP(() => {
     const navType = navigationInfo.navigationType
-    const currentPage = navigationInfo.currentPage
-    const previousPage = navigationInfo.previousPage
-    console.log(navType, currentPage, previousPage,"PAGE NAVIGATION")
 
     if(navType === 'navigate'){
         gsap.fromTo(`.${styles.container}`, {

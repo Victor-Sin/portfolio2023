@@ -11,13 +11,12 @@ import { useMemo, useRef, useEffect, useCallback } from "react";
 import { DoubleSide, Color, Vector2 } from "three";
 import * as THREE from 'three/webgpu'
 import { useFrame, useThree } from "@react-three/fiber";
-import { useFBO } from "@react-three/drei";
 
 // Three.js TSL
 import {
     screenUV, screenCoordinate, time, array, texture, float, distance, log, PI,
     uniformArray, div, min, oneMinus, int, uniform, Fn, max, mat2, vec3, sin, cos,
-    vec2, mat3, dot, fract, floor, mul, sub, mix, select, abs, pow, Loop, If,
+    vec2, mat3, dot, fract, mix, select, abs, pow, Loop, If,
     normalize, fwidth, step, vec4, smoothstep, length, add, rotate, mx_noise_float
 } from 'three/tsl';
 import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
@@ -50,7 +49,6 @@ export default function Refraction() {
     const isMobile = useMediaQuery(768);
     const materialRef = useRef();
     const glassWallRef = useRef();
-    const mainRenderTarget = useFBO();
     const animProjectRef = useRef(null);
     const animLoaderRef = useRef(null);
     
@@ -87,7 +85,6 @@ export default function Refraction() {
 
     const changeColors = useCallback((slugCheck, instant = false) => {
         const project = projectsData.projects.find(project => slugCheck.includes('project') && slugCheck.includes(project.slug));
-        console.log(project, slugCheck, count);
         if(project){
             optionsColors.colorsNext[0].set(project.colors[0])
             optionsColors.colorsNext[1].set(project.colors[1])
@@ -212,8 +209,6 @@ export default function Refraction() {
         if (isHome && typeof projectHomeActive === "string" && projectHomeActive.includes("project")) {
             animProjectRef.current?.kill();
             animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, { value: 1, duration: 3, ease: "power4.inOut" });
-            console.log(isHome, projectHomeActive);
-
             changeColors(projectHomeActive);
 
         }
@@ -662,9 +657,6 @@ export default function Refraction() {
         if (!isMobile) {
             updateTexture({ x: pointer.x, y: pointer.y });
             uniforms.MOUSE_POSITION.value.set(pointer.x, pointer.y);
-        }
-        if (mainRenderTarget.width !== size.width || mainRenderTarget.height !== size.height) {
-            mainRenderTarget.setSize(size.width, size.height);
         }
     });
 

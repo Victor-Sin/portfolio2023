@@ -31,7 +31,7 @@ export default function HeroSection() {
   return (
     <section className={styles.hero} id="home">
       <div className={styles.scrollIndicator}>(X)  [ SCROLL ]</div>
-      <span className={styles.middleLine}></span>
+      <span className={styles.middleLine} aria-hidden="true"></span>
       <h1>CREATIVE DEV</h1>
       <div className={styles.pressure}>
         <Meter></Meter>
