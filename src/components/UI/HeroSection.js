@@ -9,14 +9,14 @@ export default function HeroSection() {
   useGSAP(() => {
     const splitTextResult = animateSplitTextChars(`.${styles.hero} h1`, {
       duration: 0.75,
-      delay: 2,
+      delay: 2.5,
       staggerAmount: 1,
       blur: 20
     });
 
-    const blur1 = animHomeBlur(`.${styles.hero} .${styles.pressure}`, 1.5, 2.75);
-    const blur2 = animHomeBlur(`.${styles.hero} .${styles.date}`, 2.5, 2.5);
-    const blur3 = animHomeBlur(`.${styles.scrollIndicator}`, 1.5, 2.5);
+    const blur1 = animHomeBlur(`.${styles.hero} .${styles.pressure}`, 1.5, 3.25);
+    const blur2 = animHomeBlur(`.${styles.hero} .${styles.date}`, 2.5, 3.25);
+    const blur3 = animHomeBlur(`.${styles.scrollIndicator}`, 1.5, 3);
 
     return () => {
       cleanupAnimations([

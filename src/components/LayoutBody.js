@@ -54,7 +54,7 @@ function Loader() {
 
     tl.to(loaderRef.current, {
       opacity: 0,
-      duration: 0.5,
+      duration: 1,
       ease: 'power2.out',
       onComplete: () => {
         if (loaderRef.current) {

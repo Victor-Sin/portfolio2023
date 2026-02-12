@@ -28,7 +28,7 @@ export default function ProjectPage({ params }) {
   const navigationInfo = useNavigationInfo()
   const {contextSafe} = useGSAP()
 
-  const animationIn = contextSafe((delay = 2) => {
+  const animationIn = contextSafe((delay = 2.5) => {
 
     tl.current = gsap.timeline();
     tl.current.fromTo(`.${styles.projectContent} .${styles.middleLineContainer}`, {
@@ -186,7 +186,7 @@ export default function ProjectPage({ params }) {
         animationIn(0)
       }
       else{
-        animationIn(2)
+        animationIn(2.5)
       }
     }
 
