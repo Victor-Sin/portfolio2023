@@ -187,6 +187,7 @@ export default function ProjectPage({ params }) {
     if(count !== project.id && !isRedirectingRef.current){
       setCount(project.id)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, count])
 
   function handleClick(id) {
@@ -409,7 +410,7 @@ export default function ProjectPage({ params }) {
           <div className={styles.projInfos}>
             <div className={styles.projCubes}>
             {project.imagesProject.map((image, index) => (
-                         <span className={styles.cube}></span>
+                         <span key={index} className={styles.cube}></span>
             ))}
           
             </div>
