@@ -162,10 +162,11 @@
                 margin-left: calc(20px + 2rem);
             }
             & h3 {
-                font-size: clamp(4.5rem, 5vw, 8.33rem);
+                font-size: clamp(4.25rem, 5vw, 8.33rem);
                 font-weight: 400;
                 font-family: var(--font-parasitype);
                 opacity: 0;
+                max-width: calc(100vw - 20px - 3rem);
             }
             & .projectInfo {
                 margin-top: 2em;
@@ -192,13 +193,69 @@
                     & p {
                         margin-bottom: 1rem;
                     }
-                    & button {
+                    & > .buttonContainer{
                         margin-top: 1rem;
-                        font-size: 1rem;
-                        font-weight: 400;
-                        font-family: var(--font-courier-new);
-                        text-transform: uppercase;
-                         pointer-events: all;
+                        margin-left: 1rem;
+                        pointer-events: all;
+                        filter: blur(0px);
+                        display: inline-block;
+                        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        @media (max-width: 768px) {
+                            top: 68%;
+                        }
+                        & > button{
+                            font-weight: bold;
+                            font-family: 'Courier New', Courier, monospace;
+                            font-size: 1rem;
+                            padding: 0;
+                            border :none;
+                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                            background: none;
+                            color: #312d0d;
+                            width: auto;
+                            height: auto;
+                            overflow-y: hidden;
+                            & > span {
+                                display: inline-block;
+                                text-wrap: nowrap;
+                                transform: translateY(-100%);
+                            }    
+                        }
+                      
+                     
+                        &::before {
+                            content: "[";
+                            position: absolute;
+                            top: 0%;
+                            left: -1.25em;
+                            color: #312d0d;
+                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        }
+                        &::after {
+                            content: "]";
+                            position: absolute;
+                            top: 0;
+                            right: -1.25em;
+                            color: #312d0d;
+                
+                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                
+                        }
+                        &:hover {
+                            filter: blur(3px) !important;
+                            font-weight: bold;
+                            background: none;
+                
+                            &::before {
+                                left: -1em;
+                                font-weight: bold;
+                            }
+                            &::after {
+                                right: -1em;
+                                font-weight: bold;
+                
+                            }
+                        }
                     }
                 }
                 & .date {
@@ -212,6 +269,7 @@
                         width: 40%;
                     }
                 }
+                
             }
         }
     }

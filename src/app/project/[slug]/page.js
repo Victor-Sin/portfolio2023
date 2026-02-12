@@ -81,7 +81,30 @@ export default function ProjectPage({ params }) {
       opacity: 1,
       duration: 2,
       ease: "power2.out",
-    },"<");
+    },"<")
+    .fromTo(`.${styles.buttonContainer}`, {
+      opacity: 0,
+      filter: 'blur(5px)',
+    }, {
+      opacity: 1,
+      filter: 'blur(0px)',
+      duration: 2,
+      ease: "power2.out",
+    },"<+.15")
+    .fromTo(`.${styles.buttonContainer}`, {
+      width: '0%',
+    }, {
+      width: 'auto',
+      duration: .33,
+      ease: "power2.out",
+    }, "<+.25")
+    .fromTo(`.${styles.buttonContainer} button span`, {
+      transform: 'translateY(-100%)',
+    }, {
+      transform: 'translateY(0%)',
+      duration: .5,
+      ease: "power2.out",
+    }, "<+.35");
 
     tlImages.current = gsap.timeline();
     tlImages.current.fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
@@ -309,7 +332,30 @@ export default function ProjectPage({ params }) {
       opacity: 1,
       duration: 2,
       ease: "power2.out",
-    },"<");
+    },"<")
+    .fromTo(`.${styles.buttonContainer}`, {
+      opacity: 0,
+      filter: 'blur(5px)',
+    }, {
+      opacity: 1,
+      filter: 'blur(0px)',
+      duration: 2,
+      ease: "power2.out",
+    },"<+.15")
+    .fromTo(`.${styles.buttonContainer}`, {
+      width: '0%',
+    }, {
+      width: 'auto',
+      duration: .33,
+      ease: "power2.out",
+    }, "<+.25")
+    .fromTo(`.${styles.buttonContainer} button span`, {
+      transform: 'translateY(-100%)',
+    }, {
+      transform: 'translateY(0%)',
+      duration: .5,
+      ease: "power2.out",
+    }, "<+.35");
 
     tlImages.current = gsap.timeline();
     tlImages.current.timeScale(2);
@@ -386,12 +432,14 @@ export default function ProjectPage({ params }) {
           <h3>{project.innerTitle}</h3>
           <div className={styles.projectInfo}>
             <div className={styles.projectDescription}>
-            {project.mainContent.map((content, index) => (
-              <p key={index}>{content}</p>
-            ))}
-            <button onClick={handleClickNextProject}>        
-                <span>LEARN MORE</span>
-            </button>
+              {project.mainContent.map((content, index) => (
+                <p key={index}>{content}</p>
+              ))}
+              <div className={styles.buttonContainer}>
+                <button onClick={handleClickNextProject}>        
+                    <span>LEARN MORE</span>
+                </button>
+              </div>
             </div>
             <div className={styles.date}>
             {project.date}
