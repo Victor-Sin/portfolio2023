@@ -8,13 +8,14 @@ import Meter from '@/components/UI/Meter';
 import { animateSplitTextWords, animateNav, animateBlurFadeIn, cleanupAnimations } from '@/utils/gsapHelpers';
 import Navigation from '@/components/UI/Navigation';
 import useMediaQuery from "@/hooks/useMediaQuery"
+import { useLenis } from 'lenis/react';
 
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function HomeSection() {
   const isMobile = useMediaQuery(768)  // < 768px
-
+  const lenis = useLenis()
   
   useGSAP(() => {
     const splitText1 = animateSplitTextWords(`.${styles.home} h2`, {
@@ -79,6 +80,10 @@ export default function HomeSection() {
     };
   }, [isMobile])
 
+  const handleClick = (id) => {
+    lenis.scrollTo(`#${id}`)
+  }
+
   return (
     <section className={styles.home} id="contact">
       <h2>A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful. </h2>
@@ -87,6 +92,7 @@ export default function HomeSection() {
         variant={isMobile ? "homeMobile" : "home"} 
         selectedItem="HOME"
         customStyles={{ selected: styles.selected, date: styles.date }}
+        onItemClick={handleClick}
       />
       <div className={styles.pres}>
         <ul>

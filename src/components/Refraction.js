@@ -569,7 +569,7 @@ export default function Refraction() {
         // Palettes de couleurs
         const colors = uniformArray([
             new Color('#DAC489'), new Color('#73CAB0'), 
-            new Color('#3B4D3B'), new Color('#315261')
+            new Color('#475547'), new Color('#315261')
         ]);
         const colorsPos = uniformArray([
             new Vector2(0, -1), new Vector2(0, 0), 

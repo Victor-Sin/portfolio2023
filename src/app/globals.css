@@ -53,18 +53,9 @@ a {
   text-decoration: none;
 }
 
-.lateralBar{
-  position: fixed;
-  top: 0;
-  font-size: 15px;
-  left: 20px;
-  width: 1px;
-  height: 100lvh;
-  background-color: #423f28;
-  mix-blend-mode: color-burn;
-  opacity: .5;
 
-}
+
+
 
 @media (prefers-color-scheme: dark) {
   html {

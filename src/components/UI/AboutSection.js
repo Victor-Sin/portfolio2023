@@ -8,11 +8,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { animateSplitTextChars, animateSplitTextWords, animateNav, cleanupAnimations } from '@/utils/gsapHelpers';
 import Navigation from '@/components/UI/Navigation';
 import useMediaQuery from "@/hooks/useMediaQuery"
+import { useLenis } from 'lenis/react';
 gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutSection() {
   const isMobile = useMediaQuery(768)  // < 768px
-
+  const lenis = useLenis()
 
   useGSAP(() => {
     const navTimeline = gsap.timeline({
@@ -90,6 +91,10 @@ export default function AboutSection() {
     };
   }, [isMobile])
 
+  const handleClick = (id) => {
+    lenis.scrollTo(`#${id}`)
+  }
+
   return (
     <section className={styles.about} id="about">
       <Meter></Meter>
@@ -98,6 +103,7 @@ export default function AboutSection() {
         variant="about" 
         selectedItem="HOME"
         customStyles={{ selected: styles.selected }}
+        onItemClick={handleClick}
       />
       <h2>ABOUT ME</h2>
       <div className={styles.lineContainer}>

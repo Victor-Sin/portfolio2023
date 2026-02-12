@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
 import Refraction from "@/components/Refraction";
 import { ReactLenis, useLenis } from 'lenis/react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, startTransition } from 'react'
 import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import ProjectImage from "@/components/ProjectImage";
@@ -43,34 +43,59 @@ function SceneReadyDetector() {
 // La couleur correspond à bgColors[0] du shader Refraction (#FDE7C5)
 function Loader() {
   const isLoaded = useIsLoaded()
-  const [shouldRender, setShouldRender] = useState(() => !isLoaded)
+  const loaderRef = useRef(null)
 
+  // Quand chargé : fade out du loader
   useEffect(() => {
-    if (isLoaded) {
-      // Retirer du DOM après la fin de la transition CSS
-      const timer = setTimeout(() => setShouldRender(false), 600)
-      return () => clearTimeout(timer)
-    }
+    if (!isLoaded) return
+
+    const tl = gsap.timeline()
+
+    tl.to(loaderRef.current, {
+      opacity: 0,
+      duration: 0.5,
+      ease: 'power2.out',
+      onComplete: () => {
+        if (loaderRef.current) {
+          loaderRef.current.style.pointerEvents = 'none'
+        }
+      }
+    }, '+=0.3')
+
+    return () => tl.kill()
   }, [isLoaded])
 
-  if (!shouldRender) return null
-
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: '#FDE7C5',
-      zIndex: 9999,
-      opacity: isLoaded ? 0 : 1,
-      transition: 'opacity 0.5s ease-out',
-      pointerEvents: isLoaded ? 'none' : 'all',
-    }} />
+    <div className={styles.loader} ref={loaderRef}>
+        <span className={styles.middleLine}></span>
+       <div className={styles.loaderContent}>  
+        <div className={styles.loaderText}>
+          <span>LOADING</span>
+         </div>
+      </div>
+    </div>
   )
 }
 
 export default function LayoutBody({ children }) {
   const { forceWebGL, ready } = useForceWebGLBackend()
   const isMobile = useMediaQuery(768)
+  const [canvasDeferred, setCanvasDeferred] = useState(false)
+
+  // Différer le montage du Canvas pour laisser le HTML/CSS se peindre
+  // avant que la compilation shader WebGPU ne bloque le main thread.
+  // Double RAF : frame 1 = React commit, frame 2 = browser paint.
+  // startTransition marque le montage comme non-urgent.
+  useEffect(() => {
+    if (ready) {
+      let rafId = requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
+          startTransition(() => setCanvasDeferred(true))
+        })
+      })
+      return () => cancelAnimationFrame(rafId)
+    }
+  }, [ready])
   const lenis = useLenis((lenis) => {
     // called every scroll
   })
@@ -146,9 +171,8 @@ export default function LayoutBody({ children }) {
     <LoaderProvider>
       <ProjectProvider>
         <ReactLenis root options={{ duration: 2}}/>
-        <Loader />
         <div className={styles.canvasContainer}>
-        {ready && (
+        {ready && canvasDeferred && (
           <Canvas 
             style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
             gl={async (props) => {
@@ -163,8 +187,8 @@ export default function LayoutBody({ children }) {
              <ProjectImage/>
            </Canvas>
         )}
-        <Stats />
-        <span className="lateralBar"></span>  
+        <Loader />
+        <span className={styles.lateralBar}></span>  
         {children}
         </div>
       </ProjectProvider>

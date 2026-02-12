@@ -9,7 +9,7 @@ import { useProjectCount, useProjectSetCount, useProjectSetHomeActive } from '@/
 import { addFadeInOutBlur, animateButtonContainer, createMultipleScrollTriggers, cleanupAnimations } from '@/utils/gsapHelpers';
 import { useRouter } from 'next/navigation';
 import useMediaQuery from '@/hooks/useMediaQuery';
-
+import { useLenis } from 'lenis/react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -25,6 +25,8 @@ export default function Marker() {
   const router = useRouter();
   const {contextSafe} = useGSAP()
   const isMobile = useMediaQuery(768)
+  const [resizeKey, setResizeKey] = useState(0)
+  const lenis = useLenis()
 
   
   // Trouver le projet actuel basé sur le count
@@ -50,6 +52,22 @@ export default function Marker() {
       return () => clearTimeout(timer);
     }
   }, [count]);
+
+  // Kill + recréation des animations au resize (debounced)
+  useEffect(() => {
+    let debounceTimer
+    const handleResize = () => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        setResizeKey(k => k + 1)
+      }, 250)
+    }
+    window.addEventListener('resize', handleResize, { passive: true })
+    return () => {
+      clearTimeout(debounceTimer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   const animProject = useCallback(() => {
     
@@ -124,7 +142,6 @@ export default function Marker() {
         start: isMobile ? 'top 6.75%' : 'top 15%',
         end: '580% bottom',
         pin: true,
-        markers: true,
       },
     });
 
@@ -136,7 +153,7 @@ export default function Marker() {
       {
         trigger: `.${styles.container}`,
         toggleActions: 'play reverse play reverse',
-        start: '33.5% 50%',
+        start: '34% 50%',
         end: '64% 50%',
         onEnter: () => {
           buttonStartTl.timeScale(1);
@@ -265,15 +282,17 @@ export default function Marker() {
         marker6
       ]);
     };
-  }, [isMobile]);
+  }, [isMobile, resizeKey]);
 
   const handleClick = contextSafe(() => {
+    lenis.stop()
     setProjectHomeActive(`/project/${currentProject.slug}`)
 
     const tl = gsap.timeline({
       onComplete: () => {
         router.push(`/project/${currentProject.slug}`)
         setProjectHomeActive(null)
+        lenis.start()
       }
     })
 

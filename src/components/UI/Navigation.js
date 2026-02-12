@@ -49,9 +49,12 @@ export default function Navigation({
               <a 
                 href="#" 
                 className={isSelected ? (customStyles.selected || styles.selected) : ''}
+                style={{textDecoration: item.id === "lab" ? "line-through" : "none"}}
                 onClick={(e) => {
                   e.preventDefault()
-                  handleClick(item)
+                  if(item.id !== "lab"){
+                    handleClick(item)
+                  }
                 }}
               >
                 {item.label}
