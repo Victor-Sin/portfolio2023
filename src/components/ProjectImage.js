@@ -280,7 +280,6 @@ export default function ProjectImage(){
         if(!materialRef.current){
             materialRef.current = new THREE.MeshBasicNodeMaterial({
             side: DoubleSide,
-            alpha: true,
             transparent: true,
             depthWrite: false,
              })
