@@ -8,6 +8,7 @@ import projectsData from '@/data/projects.json';
 import { useProjectCount, useProjectSetCount, useProjectSetHomeActive } from '@/contexts/ProjectContext';
 import { addFadeInOutBlur, animateButtonContainer, createMultipleScrollTriggers, cleanupAnimations } from '@/utils/gsapHelpers';
 import { useRouter } from 'next/navigation';
+import useMediaQuery from '@/hooks/useMediaQuery';
 
 
 gsap.registerPlugin(ScrollTrigger);
@@ -23,6 +24,7 @@ export default function Marker() {
   const buttonRef = useRef(null);
   const router = useRouter();
   const {contextSafe} = useGSAP()
+  const isMobile = useMediaQuery(768)
 
   
   // Trouver le projet actuel basé sur le count
@@ -54,7 +56,7 @@ export default function Marker() {
     const tlHead = gsap.timeline({ scrollTrigger: {
       trigger: `.${styles.container}`,
       toggleActions: 'play reverse play reverse',
-      start: '34% bottom',
+      start: '35% bottom',
       end: '40% bottom',
       scrub: true,
     }});
@@ -62,7 +64,7 @@ export default function Marker() {
     const tlInfos = gsap.timeline({ scrollTrigger: {
       trigger: `.${styles.container}`,
       toggleActions: 'play reverse play reverse',
-      start: '35% bottom',
+      start: '36% bottom',
       end: '40% bottom',
       scrub: true,
     }});
@@ -119,9 +121,10 @@ export default function Marker() {
       scrollTrigger: {
         trigger: `.${styles.projets}`,
         toggleActions: 'play reverse play reverse',
-        start: 'top 15%',
+        start: isMobile ? 'top 6.75%' : 'top 15%',
         end: '580% bottom',
         pin: true,
+        markers: true,
       },
     });
 
@@ -262,7 +265,7 @@ export default function Marker() {
         marker6
       ]);
     };
-  }, []);
+  }, [isMobile]);
 
   const handleClick = contextSafe(() => {
     setProjectHomeActive(`/project/${currentProject.slug}`)

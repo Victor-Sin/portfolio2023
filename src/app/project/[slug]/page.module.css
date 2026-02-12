@@ -3,7 +3,7 @@
     width: 100svw;
     min-height: 100lvh;
     font-family: var(--font-courier-new);
-    color: #423f28;
+    color: #312d0d;
     /* mix-blend-mode crée un nouveau stacking context - doit être sur le conteneur principal */
     /* Permet aux événements de pointer de passer à travers vers le canvas */
     pointer-events: none;
@@ -318,7 +318,7 @@
             & .cube {
                 width: 1rem;
                 height: 1rem;
-                background-color: #423f28;
+                background-color: #312d0d;
                 opacity: 0;
             }
         }

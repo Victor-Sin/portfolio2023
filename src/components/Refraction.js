@@ -173,9 +173,16 @@ export default function Refraction() {
                 lenis?.scrollTo(0, { immediate: true, duration: 0 }) 
                     ?? window.scrollTo({ top: 0, behavior: 'instant' });
             }
+
+            let progressVal; 
+            if(previousPage.includes('project')){
+                progressVal = currentPage.includes('project') ? 1 : 0
+            } else {
+                progressVal = 1;
+            }
             animProjectRef.current?.kill();
             animProjectRef.current = gsap.to(uniforms.PROGRESS_PROJECT, {
-                value: previousPage.includes('project') ? 0 : 1,
+                value: progressVal,
                 duration: 2, ease: "power4.inOut", delay: 1
             });
         } 
