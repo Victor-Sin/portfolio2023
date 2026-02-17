@@ -56,12 +56,12 @@ export default function ProjectImage(){
     const animRefs = useRef([null, null, null, null, null])
 
     const [proj1, proj2, proj3, proj4, proj5, proj6] = useTexture([
-        "/images/p1.jpg",
-        "/images/p2.jpg",
-        "/images/p3.jpg",
-        "/images/p4.jpg",
-        "/images/p5.jpg",
-        "/images/p6.jpg",
+        "/images/p1.webp",
+        "/images/p2.webp",
+        "/images/p3.webp",
+        "/images/p4.webp",
+        "/images/p5.webp",
+        "/images/p6.webp",
     ])
     // Restaurer les couleurs d'origine (sRGB) — sans ça WebGL traite les JPEG en linéaire
     ;[proj1, proj2, proj3, proj4, proj5, proj6].forEach((tex) => {
