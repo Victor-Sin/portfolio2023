@@ -12,7 +12,7 @@ export const metadata = {
   keywords: ["creative developer", "WebGL", "WebGPU", "Three.js", "interactive", "Paris", "portfolio", "Victor Sin"],
   authors: [{ name: "Victor Sin" }],
   creator: "Victor Sin",
-  metadataBase: new URL("https://portfolio2023-git-master-victorsins-projects.vercel.app/"),
+  metadataBase: new URL("https://www.victor-sin.com/"),
   openGraph: {
     type: "website",
     locale: "en_US",

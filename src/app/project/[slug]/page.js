@@ -182,7 +182,6 @@ export default function ProjectPage({ params }) {
       haveBeenAnimate.current = true
       tl.current?.kill()
       tlImages.current?.kill()
-      console.log(fromProjectPage, toProjectPage)
       if(fromProjectPage && toProjectPage || !fromProjectPage && toProjectPage){
         animationOutReverse()
       }
@@ -401,7 +400,6 @@ export default function ProjectPage({ params }) {
   })
 
   const animationOutReverse = contextSafe(() => {
-    console.log("animationOutReverse")
     tl.current = gsap.timeline();
     tl.current.timeScale(2);
 
