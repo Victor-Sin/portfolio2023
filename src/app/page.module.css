@@ -201,12 +201,12 @@
     & .date {
         position: absolute;
         top: calc(50% + 2em);
-        right: 2.5rem;
+        right: calc(2.5rem);
         font-size: 1rem;
         font-weight: bold;
         @media (max-width: 768px) {
             top: calc(50% + 3.5em);
-            right: 2rem;
+            right: 5rem;
         }
     }
 
@@ -388,6 +388,7 @@
         .date{
             font-weight: bold;
             mix-blend-mode: color-burn;
+            right: calc(2.5rem + 20px);
             @media (max-width: 768px) {
                 position: absolute;
                 top: -2.5rem;

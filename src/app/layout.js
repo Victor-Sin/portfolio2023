@@ -19,12 +19,21 @@ export const metadata = {
     siteName: "Victor Sin — Creative Developer",
     title: "Victor Sin — Creative Developer",
     description: "Immersive WebGL & WebGPU experiences, interactive installations, and expressive web interfaces.",
+    images: [
+      {
+        url: "/images/og-image.webp",
+        width: 1200,
+        height: 630,
+        alt: "Victor Sin — Creative Developer",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     creator: "@victor_sin_",
     title: "Victor Sin — Creative Developer",
     description: "Immersive WebGL & WebGPU experiences, interactive installations, and expressive web interfaces.",
+    images: ["/images/og-image.webp"],
   },
   robots: {
     index: true,
