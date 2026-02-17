@@ -194,6 +194,7 @@
                         margin-bottom: 1rem;
                     }
                     & > .buttonContainer{
+                        position: relative;
                         margin-top: 1rem;
                         margin-left: 1rem;
                         pointer-events: all;
@@ -385,7 +386,7 @@
             display: flex;
             flex-direction: column;
             gap: .25rem;
-            width: 50%;
+            width: 60%;
             pointer-events: none;
             @media (max-width: 1200px) {
                 width: 70%;
@@ -397,7 +398,78 @@
                 font-weight: 400;
                 line-height: 1.25;
                 opacity: 0;
+
+               
             }
+
+            & > .buttonContainerLink{
+                position: relative;
+                margin-top: 1rem;
+                margin-left: 1rem;
+                pointer-events: all;
+                filter: blur(0px);
+                display: inline-block;
+                width: fit-content;
+                opacity: 0;
+                transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                @media (max-width: 768px) {
+                    top: 68%;
+                }
+                & > a{
+                    font-weight: bold;
+                    font-family: 'Courier New', Courier, monospace;
+                    font-size: 1rem;
+                    padding: 0;
+                    border :none;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    background: none;
+                    color: #312d0d;
+                    width: auto;
+                    height: auto;
+                    overflow-y: hidden;
+                    & > span {
+                        display: inline-block;
+                        text-wrap: nowrap;
+                        text-decoration: underline;
+                    }    
+                }
+              
+             
+                &::before {
+                    content: "[";
+                    position: absolute;
+                    top: 0%;
+                    left: -1.25em;
+                    color: #312d0d;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                &::after {
+                    content: "]";
+                    position: absolute;
+                    top: 0;
+                    right: -1.25em;
+                    color: #312d0d;
+        
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        
+                }
+                &:hover {
+                    filter: blur(3px) !important;
+                    font-weight: bold;
+                    background: none;
+        
+                    &::before {
+                        left: -1em;
+                        font-weight: bold;
+                    }
+                    &::after {
+                        right: -1em;
+                        font-weight: bold;
+        
+                    }
+                }
+            }
+    
         }
         & .imageContainer {
             display: flex;

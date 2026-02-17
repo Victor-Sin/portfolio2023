@@ -55,7 +55,24 @@
             width: auto;
             height: auto;
             overflow-y: hidden;
-         
+
+            & .loaderDots {
+                display: inline-flex;
+                gap: 0;
+            }
+
+            & .dot {
+                display: inline-block;
+                animation: dotBounce 1.4s ease-in-out infinite;
+            }
+
+            & .dot:nth-child(2) {
+                animation-delay: 0.16s;
+            }
+
+            & .dot:nth-child(3) {
+                animation-delay: 0.32s;
+            }
         }
         
         
@@ -121,8 +138,8 @@
 .container {
     position: relative;
     width: calc(100lvw - 20px);
-    max-height: 1500lvh;
-    height: 1500lvh;
+    max-height: 1400lvh;
+    height: 1400lvh;
     font-family: var(--font-courier-new);
     font-size: 1rem;
     margin-left: 20px;
@@ -218,11 +235,38 @@
             width: 95%;
         }
         @media (max-width: 768px) {
-            text-wrap:  nowrap;
-            width: 90%;
+            text-wrap: nowrap;
+            width: 100%;
             overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
 
+    }
+
+    & .marqueeTrack {
+        display: inline;
+    }
+
+    & .marqueeContent + .marqueeContent {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        & .marqueeTrack {
+            display: inline-flex;
+            width: max-content;
+            animation: marquee 25s linear infinite;
+        }
+
+        & .marqueeContent {
+            flex-shrink: 0;
+            padding-right: 4rem;
+        }
+
+        & .marqueeContent + .marqueeContent {
+            display: inline;
+        }
     }
     & .middleLine {
         position: absolute;
@@ -455,6 +499,24 @@
     animation: fadeIn 0.3s  cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+@keyframes dotBounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-0.35em);
+    }
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
 @keyframes fadeIn {
     0% {
         opacity: 0;
@@ -529,7 +591,7 @@
 
 .anchorWork{
     position: absolute;
-    top: 26.5%;
+    top: 25%;
 }
 
 .projets{

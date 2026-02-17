@@ -68,7 +68,7 @@ function Loader() {
         <span className={styles.middleLine}></span>
        <div className={styles.loaderContent}>  
         <div className={styles.loaderText}>
-          <span>LOADING</span>
+          <span>LOADING <span className={styles.loaderDots}><span className={styles.dot}>.</span><span className={styles.dot}>.</span><span className={styles.dot}>.</span></span></span>
          </div>
       </div>
     </div>
@@ -117,37 +117,37 @@ export default function LayoutBody({ children }) {
     
     previousPageRef.current = navigationInfo.currentPage
     
-    // Si on change de type de page (projet <-> home)
-    if (pageChanged && fromProjectPage !== toProjectPage) {
-      // Reset immédiat du scroll
-      lenis.scrollTo(0, { immediate: true })
-      
-      // Double RAF pour garantir que le DOM est rendu (technique standard)
-      // Frame 1: React a commité les changements
-      // Frame 2: Le navigateur a peint le nouveau contenu
-      let rafId = requestAnimationFrame(() => {
-        rafId = requestAnimationFrame(() => {
-          lenis.resize()
-          
-          // Gérer le hash si présent (ex: /#work)
-          const hash = window.location.hash?.substring(1)
-          if (!toProjectPage && hash) {
-            const element = document.getElementById(hash)
-            if (element) {
-              lenis.scrollTo(element, { offset: 0 })
-            }
+    if (!pageChanged) return
+    
+    // Reset immédiat du scroll
+    lenis.scrollTo(0, { immediate: true })
+    
+    // Double RAF pour garantir que le DOM est rendu (technique standard)
+    // Frame 1: React a commité les changements
+    // Frame 2: Le navigateur a peint le nouveau contenu
+    let rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        lenis.resize()
+        
+        // Gérer le hash si présent (ex: /#work)
+        const hash = window.location.hash?.substring(1)
+        if (!toProjectPage && hash) {
+          const element = document.getElementById(hash)
+          if (element) {
+            lenis.scrollTo(element, { offset: 0 })
           }
-        })
+        }
       })
-      
-      return () => cancelAnimationFrame(rafId)
-    }
+    })
+    
+    return () => cancelAnimationFrame(rafId)
   }, [lenis, navigationInfo.currentPage])
   useGSAP(() => {
     const navType = navigationInfo.navigationType
 
-    if(navType === 'navigate'){
-        gsap.fromTo(`.${styles.container}`, {
+    const containerEl = document.querySelector(`.${styles.container}`)
+    if(navType === 'navigate' && containerEl){
+        gsap.fromTo(containerEl, {
           opacity: 0,
         }, {
             opacity: 1,
@@ -168,7 +168,11 @@ export default function LayoutBody({ children }) {
           <Canvas 
             style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
             gl={async (props) => {
-              const renderer = new WebGPURenderer({ ...props, forceWebGL })
+              const renderer = new WebGPURenderer({
+                ...props,
+                forceWebGL,
+                powerPreference: 'high-performance',
+              })
               await renderer.init()
               return renderer
             }}

@@ -23,10 +23,20 @@ export default function ProjectPage({ params }) {
   const count = useProjectCount()
   const haveBeenAnimate = useRef(false)
   const isRedirectingRef = useRef(false)
+  const isAnimatingOut = useRef(false)
   const tl = useRef(null)
   const tlImages = useRef(null)
+  const tlOut = useRef(null)
+  const tlOutImages = useRef(null)
   const navigationInfo = useNavigationInfo()
   const {contextSafe} = useGSAP()
+
+  function killAllTimelines() {
+    tl.current?.kill()
+    tlImages.current?.kill()
+    tlOut.current?.kill()
+    tlOutImages.current?.kill()
+  }
 
   const animationIn = contextSafe((delay = 2.5) => {
 
@@ -61,12 +71,6 @@ export default function ProjectPage({ params }) {
       ease: "power2.out",
       timeline: tl.current,
       position: "<+.15",
-      scrollTrigger: {
-        trigger: `.${styles.about}`,
-        toggleActions: 'play none none none',
-        start: 'top 50%',
-        end: 'top 50%',
-      }
     });
     tl.current.fromTo(`.${styles.projectDescription}`, {
       opacity: 0,
@@ -130,7 +134,7 @@ export default function ProjectPage({ params }) {
       ease: "back.out(1.27)",
       stagger: 0.05,
     }, "<+.35")
-    .fromTo(`.${styles.projDescription} p`, {
+    .fromTo(`.${styles.projDescription} .${styles.listItem}`, {
       x: -10,
       opacity: 0,
       filter: "blur(5px)",
@@ -165,7 +169,6 @@ export default function ProjectPage({ params }) {
     }, "<")
 
 
-
  
 
   })
@@ -179,6 +182,7 @@ export default function ProjectPage({ params }) {
       haveBeenAnimate.current = true
       tl.current?.kill()
       tlImages.current?.kill()
+      console.log(fromProjectPage, toProjectPage)
       if(fromProjectPage && toProjectPage || !fromProjectPage && toProjectPage){
         animationOutReverse()
       }
@@ -190,11 +194,8 @@ export default function ProjectPage({ params }) {
       }
     }
 
-    // Cleanup: kill les timelines uniquement (pas de reset haveBeenAnimate ici car le cleanup
-    // s'exécute aussi lors des changements de dépendances, pas seulement au démontage)
     return () => {
-      tl.current?.kill()
-      tlImages.current?.kill()
+      killAllTimelines()
     }
   },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
@@ -213,44 +214,130 @@ export default function ProjectPage({ params }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, count])
 
-  function handleClick(id) {
-      // Accélérer la réversion en x2 ou x3
-      const revertSpeed = 2; // Ajustez cette valeur (2 = x2, 3 = x3, etc.)
-      
-      if (tl.current) {
-        tl.current.timeScale(revertSpeed);
-        tl.current.reverse();
-      }
-      
-      if (tlImages.current) {
-        tlImages.current.timeScale(revertSpeed);
-        tlImages.current.reverse();
-      }
-      
-      // Empêcher le useEffect de sync de remettre le count au project.id
-      isRedirectingRef.current = true
-
-      // Mettre le count à la valeur cible selon la section de destination
-      const targetCount = id === "about" ? 6 : 1
-      setCount(targetCount)
-
-      setProjectHomeActive("redirectHome")
-      setTimeout(() => {
-        router.push(`/#${id}`)
-        setProjectHomeActive(null)
-      }, 2000)
-  }
-
-  const animationOut = contextSafe((onComplete) => {
-    tl.current?.kill()
-    tlImages.current?.kill()
+  const animationInReverse = contextSafe((onComplete) => {
+    killAllTimelines()
 
     let completed = 0;
     const checkComplete = () => { if(++completed === 2 && onComplete) onComplete() };
 
-    tl.current = gsap.timeline({ onComplete: checkComplete });
-    tl.current.timeScale(2);
-    tl.current.to(`.${styles.projectDetails} h1`, {
+    tlOut.current = gsap.timeline({ onComplete: checkComplete });
+    tlOut.current.timeScale(2);
+
+    tlOut.current
+    .to(`.${styles.buttonContainer} button span`, {
+      transform: 'translateY(-100%)',
+      duration: .5,
+      ease: "power2.in",
+    })
+    .to(`.${styles.buttonContainer}`, {
+      width: '0%',
+      duration: .33,
+      ease: "power2.in",
+    }, "<+.1")
+    .to(`.${styles.buttonContainer}`, {
+      opacity: 0,
+      filter: 'blur(5px)',
+      duration: 2,
+      ease: "power2.in",
+    }, "<")
+    .to(`.${styles.date}`, {
+      opacity: 0,
+      duration: 2,
+      ease: "power2.in",
+    }, "<+.15")
+    .to(`.${styles.projectDescription}`, {
+      opacity: 0,
+      duration: 3,
+      ease: "power2.in",
+    }, "<")
+    .to(`.${styles.projectDetails} h1`, {
+      opacity: 0,
+      filter: "blur(20px)",
+      duration: 2,
+      ease: "power2.in",
+    }, "<+.15")
+    .to(`.${styles.projectContent} nav ul`, {
+      opacity: 0,
+      filter: "blur(5px)",
+      gap: isMobile ? "3rem" : "5rem",
+      duration: 0.75,
+      ease: "linear",
+    }, "<+.15")
+    .to(`.${styles.projectContent} .${styles.middleLineContainer}`, {
+      width: "0%",
+      duration: 1.5,
+      ease: "power3.in",
+    }, "<+.15");
+
+    tlOutImages.current = gsap.timeline({ onComplete: checkComplete });
+    tlOutImages.current.timeScale(2);
+
+    addFadeInOutBlur(tlOutImages.current);
+
+    tlOutImages.current
+    .to(`.${styles.imageContainer} .${styles.imageFrame}`, {
+      clipPath: "inset(25% 25% 25% 25%)",
+      duration: 1,
+      ease: "power3.in",
+      stagger: 0.15,
+    })
+    .to(`.${styles.imageContainer} img`, {
+      opacity: 0,
+      filter: "blur(20px) grayscale(100%)",
+      scale: 1.2,
+      duration: 2,
+      ease: "power2.in",
+      stagger: 0.15,
+    }, "<")
+    .to(`.${styles.projDescription} .${styles.listItem}`, {
+      x: -10,
+      opacity: 0,
+      filter: "blur(5px)",
+      duration: 1,
+      ease: "power2.in",
+      stagger: 0.075,
+    }, "<+.15")
+    .to(`.${styles.cube}`, {
+      opacity: 0,
+      scale: 0.25,
+      duration: .75,
+      ease: "back.in(1.27)",
+      stagger: 0.05,
+    }, "<+.15")
+    .fadeOutBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20, duration: 1, position: "<+.15" })
+    .fadeOutBlur(`.${styles.projectImages} .${styles.head}`, { x: 20, duration: 1, position: "<+.15" })
+    .to(`.${styles.projectImages} .${styles.middleLineContainer}`, {
+      width: "0%",
+      duration: 1.5,
+      ease: "power3.in",
+    }, "<+.15");
+  })
+
+  function handleClick(id) {
+      if (isAnimatingOut.current) return
+      isAnimatingOut.current = true
+
+      isRedirectingRef.current = true
+
+      const targetCount = id === "about" ? 6 : 1
+      setCount(targetCount)
+      setProjectHomeActive("redirectHome")
+
+      animationInReverse(() => {
+        router.push(`/#${id}`)
+        setProjectHomeActive(null)
+      })
+  }
+
+  const animationOut = contextSafe((onComplete) => {
+    killAllTimelines()
+
+    let completed = 0;
+    const checkComplete = () => { if(++completed === 2 && onComplete) onComplete() };
+
+    tlOut.current = gsap.timeline({ onComplete: checkComplete });
+    tlOut.current.timeScale(2);
+    tlOut.current.to(`.${styles.projectDetails} h1`, {
       opacity: 0,
       filter: "blur(20px)",
       duration: 2,
@@ -267,20 +354,21 @@ export default function ProjectPage({ params }) {
       ease: "power2.in",
     }, "<");
 
-    tlImages.current = gsap.timeline({ onComplete: checkComplete });
-    tlImages.current.timeScale(2);
+    tlOutImages.current = gsap.timeline({ onComplete: checkComplete });
+    tlOutImages.current.timeScale(2);
 
-    addFadeInOutBlur(tlImages.current);
-    tlImages.current
-    .fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
+    addFadeInOutBlur(tlOutImages.current);
+    if(isMobile){
+      tlOutImages.current.fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
       width: "100vw",
-    }, {
-      width: "0vw",
-      duration: 1.5,
-      delay: 2,
-      ease: "power3.out",
-    })
-    .fadeOutBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20, duration: 1, position: "<+.25" })
+      }, {
+        width: "0vw",
+        duration: 1.5,
+        delay: 2,
+        ease: "power3.out",
+      })
+    }
+    tlOutImages.current.fadeOutBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20, duration: 1, position: "<+.25" })
     .to(`.${styles.cube}`, {
       opacity: 0,
       scale: 0.25,
@@ -288,7 +376,7 @@ export default function ProjectPage({ params }) {
       ease: "back.in(1.27)",
       stagger: 0.05,
     }, "<+.35")
-    .to(`.${styles.projDescription} p`, {
+    .to(`.${styles.projDescription} .${styles.listItem}`, {
       x: -10,
       opacity: 0,
       filter: "blur(5px)",
@@ -313,6 +401,7 @@ export default function ProjectPage({ params }) {
   })
 
   const animationOutReverse = contextSafe(() => {
+    console.log("animationOutReverse")
     tl.current = gsap.timeline();
     tl.current.timeScale(2);
 
@@ -369,15 +458,18 @@ export default function ProjectPage({ params }) {
     tlImages.current.timeScale(2);
     addFadeInOutBlur(tlImages.current);
     tlImages.current
-    .fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
-      width: "0%",
-    }, {
-      width: isMobile ? "100vw" : "100%",
-      duration: 1.5,
-      delay: 1,
-      ease: "power3.out",
-    })
-    .fadeInBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20,duration:1,position: "<+.25" })
+    if(isMobile){
+      tlImages.current.fromTo(`.${styles.projectImages} .${styles.middleLineContainer}`, {
+        width: "0%",
+      }, {
+        width: isMobile ? "100vw" : "100%",
+        duration: 1.5,
+        delay: 1,
+        ease: "power3.out",
+      })
+    }
+
+    tlImages.current.fadeInBlur(`.${styles.projectImages} .${styles.imagesNumber}`, { x: 20,duration:1,position: "<+.25" })
     .fromTo(`.${styles.cube}`, {
       opacity: 0,
       scale: 0.25,
@@ -388,7 +480,7 @@ export default function ProjectPage({ params }) {
       ease: "back.out(1.27)",
       stagger: 0.05,
     }, "<+.35")
-    .fromTo(`.${styles.projDescription} p`, {
+    .fromTo(`.${styles.projDescription} .${styles.listItem}`, {
       x: -10,
       opacity: 0,
       filter: "blur(5px)",
@@ -423,6 +515,9 @@ export default function ProjectPage({ params }) {
   })
 
   const handleClickNextProject = contextSafe(() => {
+    if (isAnimatingOut.current) return
+    isAnimatingOut.current = true
+
     haveBeenAnimate.current = false
     animationOut(() => {
       router.push(`/project/${project.nextProject}`)
@@ -453,7 +548,7 @@ export default function ProjectPage({ params }) {
               ))}
               <div className={styles.buttonContainer}>
                 <button onClick={handleClickNextProject}>        
-                    <span>LEARN MORE</span>
+                    <span>Next Project</span>
                 </button>
               </div>
             </div>
@@ -480,9 +575,19 @@ export default function ProjectPage({ params }) {
             </div>
             <div className={styles.projDescription}>
               {
-                Object.keys(project.details).map((detail, index) => (
-                  <p key={index}><strong>{detail} : </strong> {project.details[detail]}</p>
-                ))
+                Object.keys(project.details).map((detail, index) => {
+                  if(detail === "link"){
+                    return(
+                      <div className={`${styles.buttonContainerLink} ${styles.listItem}`} key={index}>
+                          <a className={styles.link} href={project.details[detail].startsWith('http') ? project.details[detail] : `https://${project.details[detail]}`} target="_blank" rel="noopener noreferrer"> 
+                            <span>See live</span>
+                          </a>                      
+                      </div>
+                    )
+                  }
+                  return(
+                  <p key={index} className={`${styles.listItem}`}><strong>{detail} : </strong> {project.details[detail]}</p>
+                )})
               }
             </div>
           </div>

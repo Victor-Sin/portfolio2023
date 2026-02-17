@@ -17,18 +17,22 @@ export default function HomeSection() {
   const lenis = useLenis()
   
   useGSAP(() => {
-    const splitText1 = animateSplitTextWords(`.${styles.home} h2`, {
-      trigger: `.${styles.container}`,
-      toggleActions: 'play none none none',
-      start: '4.66% 50%',
-      end: '8% 50%',
-      scrub: true,
-    }, {
-      duration: 0.75,
-      delay: 2,
-      staggerAmount: 1,
-      blur: 5
-    });
+    let splitText1 = null;
+
+    if (!isMobile) {
+      splitText1 = animateSplitTextWords(`.${styles.home} h2`, {
+        trigger: `.${styles.container}`,
+        toggleActions: 'play none none none',
+        start: '4.66% 50%',
+        end: '8% 50%',
+        scrub: true,
+      }, {
+        duration: 0.75,
+        delay: 2,
+        staggerAmount: 1,
+        blur: 5
+      });
+    }
 
     let splitText2 = null;
 
@@ -85,7 +89,12 @@ export default function HomeSection() {
 
   return (
     <section className={styles.home} id="contact">
-      <h2>A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful. </h2>
+      <h2>
+        <span className={styles.marqueeTrack}>
+          <span className={styles.marqueeContent}>A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful.&nbsp;</span>
+          <span className={styles.marqueeContent} aria-hidden="true">A creative developer who designs interactive web experiences, from 3D interfaces to immersive websites, blending creativity, motion, and technology, shaping projects that are both functional and engaging, where every interaction is intentional and every detail meaningful.&nbsp;</span>
+        </span>
+      </h2>
       <span className={styles.middleLine} aria-hidden="true"></span>
       <Navigation 
         variant={isMobile ? "homeMobile" : "home"} 
