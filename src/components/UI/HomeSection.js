@@ -110,7 +110,7 @@ export default function HomeSection() {
             <ul className={styles.contact}>
               <li>- <a href="mailto:SIN.VICTOR@OUTLOOK.FR">SIN.VICTOR@OUTLOOK.FR</a></li>
               <li>- <a href="https://www.linkedin.com/in/eneiryth/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-              <li>- <a href="https://x.com/_VictorSIN" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+              <li>- <a href="https://x.com/victor_sin_" target="_blank" rel="noopener noreferrer">Twitter</a></li>
             </ul>
           </li>
           <li>(+) WHERE</li>
