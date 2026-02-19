@@ -25,23 +25,25 @@
     },
     {
       "id": 2,
-      "slug": "calendar-etam-2025",
-      "title": "CALENDAR ETAM 2025",
-      "innerTitle": "ETAM 2025",
+      "slug": "william-klein",
+      "title": "WILLIAM KLEIN",
+      "innerTitle": "WILLIAM KLEIN",
       "date": " DECEMBER 2025",
-      "client": "VOKODE | FREELANCE",
-      "type": "EXPERIENCE SHOWCASE",
-      "link": "https://example.com/project2",
+      "client": "VOKODE | IN-HOUSE",
+      "type": "PORTFOLIO WEBSITE",
       "imageUrl": "/images/p2.webp",
-      "imagesProject": ["/images/proj2/1.webp", "/images/proj2/2.webp"],
-      "mainContent": ["This project was created for Etam’s 2025 Christmas campaign, extending the brand’s paper-cut book concept into a digital experience designed for social media. The site translates the tactile charm of the artist’s original creation into an interactive online format, preserving the playfulness and intricacy of each cutout.",
-            "My role included developing the site and creating custom scripts for After Effects. These scripts allowed me to extract information about the position, orientation, animations, and timelines of each element, ensuring the digital experience remained as faithful as possible to the artist’s vision."],
+      "imagesProject": ["/images/proj2/1.webp", "/images/proj2/2.webp", "/images/proj2/3.webp", "/images/proj2/4.webp", "/images/proj2/5.webp"],
+      "mainContent": ["This project was commissioned by the William Klein Studio with the objective of expanding access to the life and work of William Klein through a dedicated web experience.",
+            "Conceived as a digital extension rather than a simple showcase, the site offers a global and transversal view of the artist’s career. It connects the different facets of his practice — photography, cinema, painting, graphic work — into a single navigable space, allowing users to explore the breadth of his artistic journey.",
+          "The experience is designed to provide context, continuity, and perspective, making visible the relationships between works, periods, and mediums. More than an archive, the project acts as a living interface, giving structure to a rich and multifaceted body of work while remaining accessible and open-ended."],
       "details": {
         "agency": "Vokode",
-        "position": "freelance",
-        "stack": "React.js ; GSAP ; Howler.js",
+        "position": "in-house",
+        "stack": "Next.js ; GSAP ;",
         "job": "Creative Developer ;",
-        "status": "DONE ;"
+        "status": "DONE ;",
+        "link": "https://www.williamklein.fr/"
+
       },
       "nextProject": "chanel-atelier",
       "colors": ["#C2776D", "#4B5A49", "#F1E4D2"]
@@ -62,7 +64,7 @@
       "details": {
         "agency": "Vokode",
         "position": "in-house",
-        "stack": "Three.js ; GSAP ; React.js",
+        "stack": "Three.js ; GSAP ; Next.js",
         "job": "Creative Developer ;",
         "status": "DONE ;"
       },
@@ -88,7 +90,8 @@
         "position": "in-house",
         "stack": "Three.js ; GSAP ; React.js ; Howler.js",
         "job": "Creative Developer ;",
-        "status": "DONE ;"
+        "status": "DONE ;",
+        "link": "https://vosprojets.macif.fr/"
       },
       "nextProject": "IX-CHEL-ET-KIN",
       "colors": ["#D1D3C5","#6C6E85", "#99B19C"]
