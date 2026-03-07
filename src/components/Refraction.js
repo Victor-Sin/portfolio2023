@@ -112,24 +112,17 @@ export default function Refraction() {
     // CALLBACKS & EFFECTS
     // --------------------------------------------------------
 
-    const updateAspect = useCallback((e) => {
-        uniforms.ASPECT.value = e 
-            ? e.target.innerWidth / e.target.innerHeight 
-            : size.width / size.height;
-    }, [uniforms, size]);
-
     const onScrollUpdate = useCallback(({ progress }) => {
         uniforms.PROGRESS.value = progress;
     }, [uniforms]);
 
     const { update: updateScroll } = useScrollProgress({ onUpdate: onScrollUpdate }, 0, true);
 
-    // Resize listener
+    // Sync aspect ratio from R3F size (avoid extra window.resize churn)
     useEffect(() => {
-        updateAspect();
-        window.addEventListener("resize", updateAspect, { passive: true });
-        return () => window.removeEventListener("resize", updateAspect);
-    }, [updateAspect]);
+        if (!size?.width || !size?.height) return;
+        uniforms.ASPECT.value = size.width / size.height;
+    }, [size.width, size.height, uniforms]);
 
     // Détection WebGL/WebGPU pour flip UV
     useEffect(() => {
@@ -650,7 +643,10 @@ export default function Refraction() {
     }, [textureVersion, dataTextureStatic, isMobile]);
 
     const planeZ = 1;
-    const { width, height } = viewport.getCurrentViewport(camera, [0, 0, planeZ]);
+    const { width, height } = useMemo(
+        () => viewport.getCurrentViewport(camera, [0, 0, planeZ]),
+        [viewport, camera, planeZ, size.width, size.height]
+    );
 
     useFrame(({ pointer }) => {
         updateScroll();

@@ -23,6 +23,8 @@ export default function useDataTextureStatic(
     const aspectRef = useRef(0)
     const heightRef = useRef(0)
     const dataTextureRef = useRef(null)
+    const resizeDebounceRef = useRef(null)
+    const resizeRafRef = useRef(null)
 
     // Fonction pour créer une nouvelle texture
     const createTexture = useCallback((height) => {
@@ -77,25 +79,55 @@ export default function useDataTextureStatic(
 
     // Gestion du resize
     useEffect(() => {
-        const handleResize = () => {
+        const applyResize = () => {
             const newHeight = computeBoundsAndHeight()
-            
-            // Si la hauteur a changé, incrémenter la version pour recréer la texture
+
+            // Si la hauteur a changé, recréer la texture une seule fois en fin de resize
             if (newHeight !== heightRef.current) {
                 heightRef.current = newHeight
-                
+
                 // Reset des états de la souris
                 pointerRef.current = { x: 0, y: 0 }
                 pointerVelocityRef.current = { x: 0, y: 0 }
                 rawPointerRef.current = { x: 0, y: 0 }
-                
+
                 // Trigger re-création de la texture et du material
                 setTextureVersion(v => v + 1)
             }
         }
 
+        const handleResize = () => {
+            // Mise à jour des bounds au rythme du navigateur (fluide, sans re-render React)
+            if (resizeRafRef.current) {
+                cancelAnimationFrame(resizeRafRef.current)
+            }
+            resizeRafRef.current = requestAnimationFrame(() => {
+                computeBoundsAndHeight()
+                resizeRafRef.current = null
+            })
+
+            // Debounce 250ms pour la recréation texture/material
+            if (resizeDebounceRef.current) {
+                clearTimeout(resizeDebounceRef.current)
+            }
+            resizeDebounceRef.current = setTimeout(() => {
+                applyResize()
+                resizeDebounceRef.current = null
+            }, 350)
+        }
+
         window.addEventListener("resize", handleResize, { passive: true })
-        return () => window.removeEventListener("resize", handleResize)
+        return () => {
+            window.removeEventListener("resize", handleResize)
+            if (resizeDebounceRef.current) {
+                clearTimeout(resizeDebounceRef.current)
+                resizeDebounceRef.current = null
+            }
+            if (resizeRafRef.current) {
+                cancelAnimationFrame(resizeRafRef.current)
+                resizeRafRef.current = null
+            }
+        }
     }, [computeBoundsAndHeight])
 
     function updateTexture(mousePosition){
@@ -118,6 +150,7 @@ export default function useDataTextureStatic(
     function frameUpdateFalloff(){
         const dt = dataTexture
         if (!dt) return
+        if (!dt.image || !dt.image.data) return
         
         const data = dt.image.data
         const h = heightRef.current
@@ -220,6 +253,6 @@ export default function useDataTextureStatic(
     return {
         updateTexture,
         dataTexture,
-        textureVersion  // Pour que Refraction puisse recréer le material
+        textureVersion
     }
 }
