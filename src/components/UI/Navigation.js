@@ -32,11 +32,13 @@ export default function Navigation({
     }
   }
 
-  const showTitle = variant === 'home'
+  const isHomeVariant = variant.includes('home')
+  const showTitle = isHomeVariant
   const showClock = variant.includes('home')
+  const ariaLabel = isHomeVariant ? 'home navigation' : `${variant} navigation`
 
   return (
-    <nav className={customStyles.nav || ''} aria-label={`${variant} navigation`}>
+    <nav className={customStyles.nav || ''} aria-label={ariaLabel}>
       {showTitle && <h3>VICTOR SIN</h3>}
       <ul className={customStyles.ul || ''}>
         {navItems.map((item) => {
