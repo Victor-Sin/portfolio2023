@@ -184,6 +184,7 @@
         font-size: clamp(50px, 7.5svw, 125px);
         font-weight: 500;
         text-wrap: nowrap;
+        white-space: nowrap;
         transform: translate(-50%, -50%);
         overflow: hidden;
     }
@@ -236,6 +237,7 @@
         }
         @media (max-width: 768px) {
             text-wrap: nowrap;
+            white-space: nowrap;
             width: 100%;
             overflow: hidden;
             mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
@@ -688,6 +690,7 @@
             & > span {
                 display: inline-block;
                 text-wrap: nowrap;
+                white-space: nowrap;
                 transform: translateY(-100%);
             }    
         }
