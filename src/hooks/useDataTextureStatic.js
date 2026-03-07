@@ -1,10 +1,9 @@
-import {useMemo, useRef, useEffect, useState, useCallback} from "react";
+import {useMemo, useRef, useEffect, useCallback} from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 
 export default function useDataTextureStatic(
-    width, 
-    aspectRatio = 0,
+    simulationSize = 256,
     uvClassic = false,
     radius = 0.075,
     decayFactor = 0.98,
@@ -13,28 +12,35 @@ export default function useDataTextureStatic(
     influenceGamma = 1
 ){
     const {gl} = useThree()
-    const [textureVersion, setTextureVersion] = useState(0)
+    const simWidth = simulationSize
+    const simHeight = simulationSize
 
     // Pointer tracking refs - updated without triggering re-renders
     const pointerVelocityRef = useRef({ x: 0, y: 0 })
     const pointerRef = useRef({ x: 0, y: 0 })
-    const rawPointerRef = useRef({ x: 0, y: 0 })
+    const normalizedPointerRef = useRef({ x: 0, y: 0 })
     const canvasBoundsRef = useRef(null)
-    const aspectRef = useRef(0)
-    const heightRef = useRef(0)
     const dataTextureRef = useRef(null)
-    const resizeDebounceRef = useRef(null)
-    const resizeRafRef = useRef(null)
+    const resizeRafRef = useRef(0)
+    const influenceScaleRef = useRef({ x: 1, y: 1 })
+    const EPSILON_ASPECT = 1e-6
 
-    // Fonction pour créer une nouvelle texture
-    const createTexture = useCallback((height) => {
-        // Libérer l'ancienne texture si elle existe
-        if (dataTextureRef.current) {
-            dataTextureRef.current.dispose()
+    const getCursorScales = useCallback((aspect) => {
+        const safeAspect = Math.max(EPSILON_ASPECT, aspect || 1)
+        return {
+            // Match Refraction.js (592-598):
+            // cursorCanonical = vec2(ndcX, ndcY / aspectSafe)
+            x: 1,
+            y: safeAspect
         }
+    }, [EPSILON_ASPECT])
 
-        const data = new Float32Array(height * width * 4)
-        for (let i = 0; i < width * height; i++) {
+    // Création unique de la texture (aucune réallocation pendant le resize)
+    const createTexture = useCallback(() => {
+        if (dataTextureRef.current) return dataTextureRef.current
+
+        const data = new Float32Array(simWidth * simHeight * 4)
+        for (let i = 0; i < simWidth * simHeight; i++) {
             const idx = i * 4
             data[idx] = 0
             data[idx + 1] = 0
@@ -44,8 +50,8 @@ export default function useDataTextureStatic(
 
         const newTexture = new THREE.DataTexture(
             data,
-            width,
-            height,
+            simWidth,
+            simHeight,
             THREE.RGBAFormat,
             THREE.FloatType
         )
@@ -55,94 +61,80 @@ export default function useDataTextureStatic(
 
         dataTextureRef.current = newTexture
         return newTexture
-    }, [width])
+    }, [simHeight, simWidth])
 
-    // Calcule les bounds et retourne la nouvelle hauteur
-    const computeBoundsAndHeight = useCallback(() => {
+    // Met a jour uniquement les bounds (independant de la texture)
+    const updateCanvasMetrics = useCallback(() => {
         const canvas = gl.domElement
         if (canvas) {
             canvasBoundsRef.current = canvas.getBoundingClientRect()
-            aspectRef.current = aspectRatio === 0 
-                ? canvasBoundsRef.current.height / canvasBoundsRef.current.width 
-                : aspectRatio
-            return Math.round(width * aspectRef.current)
         }
-        return heightRef.current || Math.round(width)
-    }, [gl, aspectRatio, width])
+    }, [gl])
 
-    // Création initiale de la texture
+    // Creation initiale
     const dataTexture = useMemo(() => {
-        const height = computeBoundsAndHeight()
-        heightRef.current = height
-        return createTexture(height)
-    }, [width, textureVersion, computeBoundsAndHeight, createTexture])
+        updateCanvasMetrics()
+        return createTexture()
+    }, [createTexture, updateCanvasMetrics])
 
-    // Gestion du resize
+    // Resize: mise a jour des metrics seulement
     useEffect(() => {
-        const applyResize = () => {
-            const newHeight = computeBoundsAndHeight()
-
-            // Si la hauteur a changé, recréer la texture une seule fois en fin de resize
-            if (newHeight !== heightRef.current) {
-                heightRef.current = newHeight
-
-                // Reset des états de la souris
-                pointerRef.current = { x: 0, y: 0 }
-                pointerVelocityRef.current = { x: 0, y: 0 }
-                rawPointerRef.current = { x: 0, y: 0 }
-
-                // Trigger re-création de la texture et du material
-                setTextureVersion(v => v + 1)
-            }
-        }
-
         const handleResize = () => {
-            // Mise à jour des bounds au rythme du navigateur (fluide, sans re-render React)
             if (resizeRafRef.current) {
                 cancelAnimationFrame(resizeRafRef.current)
             }
             resizeRafRef.current = requestAnimationFrame(() => {
-                computeBoundsAndHeight()
-                resizeRafRef.current = null
+                updateCanvasMetrics()
+                // Recaler le centre pointeur apres resize (repere NDC [-1, 1])
+                normalizedPointerRef.current.x = 0
+                normalizedPointerRef.current.y = 0
+                pointerRef.current.x = 0
+                pointerRef.current.y = 0
+                pointerVelocityRef.current.x = 0
+                pointerVelocityRef.current.y = 0
+                resizeRafRef.current = 0
             })
-
-            // Debounce 250ms pour la recréation texture/material
-            if (resizeDebounceRef.current) {
-                clearTimeout(resizeDebounceRef.current)
-            }
-            resizeDebounceRef.current = setTimeout(() => {
-                applyResize()
-                resizeDebounceRef.current = null
-            }, 350)
         }
 
         window.addEventListener("resize", handleResize, { passive: true })
         return () => {
             window.removeEventListener("resize", handleResize)
-            if (resizeDebounceRef.current) {
-                clearTimeout(resizeDebounceRef.current)
-                resizeDebounceRef.current = null
-            }
             if (resizeRafRef.current) {
                 cancelAnimationFrame(resizeRafRef.current)
-                resizeRafRef.current = null
+                resizeRafRef.current = 0
             }
         }
-    }, [computeBoundsAndHeight])
+    }, [updateCanvasMetrics])
 
     function updateTexture(mousePosition){
         if(dataTexture){
             let bounds = canvasBoundsRef.current
-            if (!bounds && aspectRatio === 0) {
-                // Recalculer les bounds si nécessaire
-                computeBoundsAndHeight()
+            if (!bounds) {
+                updateCanvasMetrics()
                 bounds = canvasBoundsRef.current
                 if (!bounds) {
                     return // Pas de canvas disponible, skip cette frame
                 }
             }
 
-            rawPointerRef.current = { x: mousePosition.x, y: mousePosition.y }
+            // mousePosition (R3F pointer) arrive en NDC [-1, 1].
+            // On reprojecte via les bounds canvas puis on conserve un repere NDC [-1, 1].
+            const clientX = ((mousePosition.x + 1) * 0.5) * bounds.width + bounds.left
+            const clientY = ((1 - (mousePosition.y + 1) * 0.5) * bounds.height) + bounds.top
+            const normalizedX = ((clientX - bounds.left) / bounds.width) * 2 - 1
+            const normalizedY = (1 - ((clientY - bounds.top) / bounds.height)) * 2 - 1
+
+            // Aligne l'interaction CPU sur le sampling shader:
+            // ndcX inchange, ndcY divise par aspect.
+            const aspect = bounds.width > 0 && bounds.height > 0
+                ? bounds.width / bounds.height
+                : 1
+            const { x: scaleX, y: scaleY } = getCursorScales(aspect)
+            influenceScaleRef.current.x = scaleX
+            influenceScaleRef.current.y = scaleY
+
+            normalizedPointerRef.current.x = Math.min(1, Math.max(-1, normalizedX / scaleX))
+            normalizedPointerRef.current.y = Math.min(1, Math.max(-1, normalizedY / scaleY))
             frameUpdateFalloff()
         }
     }
@@ -153,23 +145,15 @@ export default function useDataTextureStatic(
         if (!dt.image || !dt.image.data) return
         
         const data = dt.image.data
-        const h = heightRef.current
-        
-        // Si pas de données de pointeur, decay seulement
-        const rawPointer = rawPointerRef.current
-        if (!rawPointer) {
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] *= decayFactor
-                data[i + 1] *= decayFactor
-                data[i + 2] *= decayFactor
-            }
-            dt.needsUpdate = true
-            return
-        }
+        const h = simHeight
+        const bounds = canvasBoundsRef.current
+        const aspect = bounds && bounds.width > 0 && bounds.height > 0
+            ? bounds.width / bounds.height
+            : 1
         
         // Mise à jour de la vélocité du pointeur
-        const pointerNormX = rawPointer.x
-        const pointerNormY = rawPointer.y
+        const pointerNormX = normalizedPointerRef.current.x
+        const pointerNormY = normalizedPointerRef.current.y
         
         pointerVelocityRef.current.x = pointerNormX - pointerRef.current.x
         pointerVelocityRef.current.y = pointerNormY - pointerRef.current.y
@@ -178,29 +162,38 @@ export default function useDataTextureStatic(
         pointerRef.current.y = pointerNormY
         
         // Précalculs (hors boucle)
-        const mouseRadiusX = width * radius
-        const mouseRadiusY = mouseRadiusX * aspectRef.current
-        const distMaxSq = mouseRadiusX * mouseRadiusX + mouseRadiusY * mouseRadiusY
-        const sqrtDistMax = Math.sqrt(distMaxSq)
+        const { x: scaleX, y: scaleY } = getCursorScales(aspect)
+        influenceScaleRef.current.x = scaleX
+        influenceScaleRef.current.y = scaleY
+        // Rayon de reference en espace "vue corrigee" (cercle constant a l'ecran)
+        const baseRadius = Math.max(1, simWidth * radius )
+        // Rayon en espace texture (pour la bounding box)
+        const mouseRadiusX = Math.max(1, baseRadius  * scaleX/scaleY  )
+        const mouseRadiusY = Math.max(1, baseRadius / scaleX/ scaleY  )
 
-        const cellX = uvClassic 
-            ? pointerRef.current.x * width 
-            : (1 + pointerRef.current.x) * 0.5 * width
-        const cellY = uvClassic 
-            ? pointerRef.current.y * h 
+        const cellX = uvClassic
+            ? pointerRef.current.x * simWidth
+            : (1 + pointerRef.current.x) * 0.5 * simWidth
+        const cellY = uvClassic
+            ? pointerRef.current.y * h
             : (1 + pointerRef.current.y) * 0.5 * h
         
         // Bounding box pour limiter la zone d'influence
         const minX = Math.max(0, Math.floor(cellX - mouseRadiusX))
-        const maxX = Math.min(width, Math.ceil(cellX + mouseRadiusX))
+        const maxX = Math.min(simWidth, Math.ceil(cellX + mouseRadiusX ))
         const minY = Math.max(0, Math.floor(cellY - mouseRadiusY))
         const maxY = Math.min(h, Math.ceil(cellY + mouseRadiusY))
         
-        // Précalcul vélocité (constant pour cette frame)
-        const vxGrid = pointerVelocityRef.current.x * (width / 2)
-        const vyGrid = -pointerVelocityRef.current.y * (h / 2)
+        // Metrique isotrope derivee directement des rayons (171-172),
+        // afin de conserver un cercle quel que soit l'aspect ratio.
+        const isoScaleX = baseRadius / mouseRadiusX
+        const isoScaleY = baseRadius / mouseRadiusY
+
+        // Précalcul vélocité dans le meme espace isotrope que la distance radiale.
+        const vxGrid = pointerVelocityRef.current.x * isoScaleX * (simWidth / 2) 
+        const vyGrid = -pointerVelocityRef.current.y * isoScaleY * (h / 2)
         const speedGrid = Math.hypot(vxGrid, vyGrid)
-        const vxCurved = Math.sign(vxGrid) * Math.pow(Math.abs(vxGrid), influenceGamma)
+        const vxCurved = Math.sign(vxGrid) * Math.pow(Math.abs(vxGrid ), influenceGamma)
         const vyCurved = Math.sign(vyGrid) * Math.pow(Math.abs(vyGrid), influenceGamma)
         const speedCurved = Math.pow(speedGrid, influenceGamma)
         const len = Math.hypot(vxCurved, vyCurved) || 1
@@ -209,10 +202,10 @@ export default function useDataTextureStatic(
         
         // Une seule passe : decay + influence dans la bounding box
         for (let y = 0; y < h; y++) {
-            const rowOffset = y * width * 4
+            const rowOffset = y * simWidth * 4
             const inYRange = y >= minY && y < maxY
             
-            for (let x = 0; x < width; x++) {
+            for (let x = 0; x < simWidth; x++) {
                 const idx = rowOffset + x * 4
                 
                 // Decay (toujours appliqué)
@@ -224,11 +217,15 @@ export default function useDataTextureStatic(
                 if (inYRange && x >= minX && x < maxX) {
                     const dx = cellX - (x + 0.5)
                     const dy = cellY - (y + 0.5)
-                    const distSq = dx * dx + dy * dy
+                    // Distance isotrope normalisee par les rayons X/Y (171-172).
+                    // distSqNorm < 1 definit toujours un cercle visuel.
+                    const dxIso = dx / mouseRadiusX
+                    const dyIso = dy / mouseRadiusY
+                    const distSqNorm = dxIso * dxIso + dyIso * dyIso
                     
-                    if (distSq < distMaxSq && distSq > 0) {
+                    if (distSqNorm < 1 && distSqNorm > 0) {
                         // Un seul sqrt au lieu de deux
-                        const force = Math.min(2, sqrtDistMax / Math.sqrt(distSq))
+                        const force = Math.min(2, 1 / Math.sqrt(distSqNorm))
                         const scale = influenceGain * strength * force
                         const dispBase = scale * speedCurved
                         
@@ -252,7 +249,6 @@ export default function useDataTextureStatic(
 
     return {
         updateTexture,
-        dataTexture,
-        textureVersion
+        dataTexture
     }
 }

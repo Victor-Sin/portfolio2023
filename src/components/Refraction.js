@@ -52,7 +52,7 @@ export default function Refraction() {
     const animProjectRef = useRef(null);
     const animLoaderRef = useRef(null);
     
-    const { dataTexture: dataTextureStatic, updateTexture, textureVersion } = useDataTextureStatic(64, 0, false);
+    const { dataTexture: dataTextureStatic, updateTexture } = useDataTextureStatic(64, false);
     const { size, gl, camera, viewport } = useThree();
     
     const navigationInfo = useNavigationInfo();
@@ -588,10 +588,16 @@ export default function Refraction() {
         const centered = vec2(uvGPU.mul(2).sub(1)).toVar();
         const shaderUV = vec2(centered.x.mul(uniforms.ASPECT), centered.y).toVar();
 
-        // Effet curseur (skip gaussianBlur sur mobile — la texture est vide)
+        // Mapping canonique: espace carre [-1,1]^2 puis zoom constant.
+        const aspectSafe = uniforms.ASPECT;
+        const cursorCanonical = vec2(uvGPU.x.mul(2).sub(1), uvY.mul(2).sub(1).div(aspectSafe)).toVar();
+        const cursorUvSquare = min(
+            max(cursorCanonical.mul(0.5).add(0.5), vec2(0)),
+            vec2(1)
+        ).toVar();
         const cursor = isMobile
             ? vec2(0)
-            : gaussianBlur(texture(dataTextureStatic, vec2(uvGPU.x, uvY)), null, 2).rg;
+            : gaussianBlur(texture(dataTextureStatic, cursorUvSquare), null, 2).rg;
 
         // UVs finaux
         const rotation = oneMinus(length(shaderUV.mul(2))).mul(uniforms.PROGRESS_PROJECT).mul(.15);
@@ -640,7 +646,7 @@ export default function Refraction() {
         buildShader(materialRef.current);
         materialRef.current.needsUpdate = true;
         return materialRef.current;
-    }, [textureVersion, dataTextureStatic, isMobile]);
+    }, [dataTextureStatic, isMobile]);
 
     const planeZ = 1;
     const { width, height } = useMemo(
