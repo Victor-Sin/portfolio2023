@@ -22,10 +22,12 @@ export default function Marker() {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const infosRef = useRef(null);
   const buttonRef = useRef(null);
+  const markerTriggersRef = useRef([]);
   const router = useRouter();
   const {contextSafe} = useGSAP()
   const isMobile = useMediaQuery(768)
   const lenis = useLenis()
+  const totalProjects = projectsData.projects.length
 
   
   // Trouver le projet actuel basé sur le count
@@ -246,8 +248,10 @@ export default function Marker() {
         }
       ]
     );
+    markerTriggersRef.current = markerTriggers;
 
     return () => {
+      markerTriggersRef.current = [];
       cleanupAnimations([
         { timeline: pinTimeline, scrollTrigger: pinTimeline.scrollTrigger },
         { timeline: tlHead, scrollTrigger: tlHead.scrollTrigger },
@@ -298,6 +302,40 @@ export default function Marker() {
 
   })
 
+  const handleButtonKeyDown = useCallback((event) => {
+    if (event.key !== 'Tab') return;
+
+    const normalizedCount = count === 0 ? 1 : count;
+    const direction = event.shiftKey ? -1 : 1;
+    const nextCount = normalizedCount + direction;
+
+    if (nextCount >= 1 && nextCount <= totalProjects) {
+      const targetTrigger = markerTriggersRef.current[nextCount - 1]?.scrollTrigger;
+      if (!targetTrigger) return;
+
+      event.preventDefault();
+      setCount(nextCount);
+
+      const currentStart = targetTrigger.start;
+      const nextStart = markerTriggersRef.current[nextCount]?.scrollTrigger?.start;
+      const prevStart = markerTriggersRef.current[nextCount - 2]?.scrollTrigger?.start;
+
+      let targetScroll = currentStart + 2;
+      if (typeof nextStart === 'number') {
+        targetScroll = Math.min(targetScroll, nextStart - 2);
+      }
+      if (typeof prevStart === 'number') {
+        targetScroll = Math.max(targetScroll, prevStart + 2);
+      }
+
+      if (lenis) {
+        lenis.scrollTo(targetScroll, { immediate: true });
+      } else if (typeof window !== 'undefined') {
+        window.scrollTo({ top: targetScroll, behavior: 'auto' });
+      }
+    }
+  }, [count, lenis, setCount, totalProjects]);
+
 
   return <>
   <p className={styles.nameProject}  > VICTOR SIN</p>
@@ -319,7 +357,12 @@ export default function Marker() {
 
 
     <div className={styles.buttonContainer}>
-      <button ref={buttonRef} onClick={handleClick} aria-label={`Learn more about ${currentProject.title}`}>        
+      <button
+        ref={buttonRef}
+        onClick={handleClick}
+        onKeyDown={handleButtonKeyDown}
+        aria-label={`Learn more about ${currentProject.title}`}
+      >
           <span>LEARN MORE</span>
       </button>
     </div>

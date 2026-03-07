@@ -19,10 +19,10 @@ export default function Navigation({
   customStyles = {}
 }) {
   const navItems = [
-    { label: 'WORK', id: 'work' },
-    { label: 'CONTACT', id: 'contact' },
-    { label: 'ABOUT', id: 'about' },
     { label: 'HOME', id: 'home' },
+    { label: 'CONTACT', id: 'contact' },
+    { label: 'WORK', id: 'work' },
+    { label: 'ABOUT', id: 'about' },
     { label: 'LAB', id: 'lab' }
   ]
 

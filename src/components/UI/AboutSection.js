@@ -101,7 +101,7 @@ export default function AboutSection() {
 
       <Navigation 
         variant="about" 
-        selectedItem="HOME"
+        selectedItem="ABOUT"
         customStyles={{ selected: styles.selected }}
         onItemClick={handleClick}
       />
