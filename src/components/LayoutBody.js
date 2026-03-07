@@ -176,7 +176,7 @@ export default function LayoutBody({ children }) {
               await renderer.init()
               return renderer
             }}
-            dpr={1}
+            dpr={1.25}
           >
             <SceneReadyDetector />
             <Refraction />
