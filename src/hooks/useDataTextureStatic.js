@@ -176,7 +176,7 @@ export default function useDataTextureStatic(
             : (1 + pointerRef.current.x) * 0.5 * simWidth
         const cellY = uvClassic
             ? pointerRef.current.y * h
-            : (1 + pointerRef.current.y) * 0.5 * h
+            : (gl.backend?.isWebGLBackend ? 1 - pointerRef.current.y : 1 + pointerRef.current.y)  * 0.5 * h
         
         // Bounding box pour limiter la zone d'influence
         const minX = Math.max(0, Math.floor(cellX - mouseRadiusX))
