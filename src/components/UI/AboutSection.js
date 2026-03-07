@@ -32,7 +32,7 @@ export default function AboutSection() {
       blur: 5,
       scaleYStart: isMobile ? 1 : 0.5,
       gapStart: isMobile ? "2.5rem" : "5rem",
-      gapEnd: isMobile ? "3rem" : "5rem",
+      gapEnd: isMobile ? "3.25rem" : "5rem",
       ease: "linear",
       timeline: navTimeline
     });

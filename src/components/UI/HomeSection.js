@@ -62,8 +62,8 @@ export default function HomeSection() {
       delay: 2,
       blur: 5,
       scaleYStart: isMobile ? 1 : 0.5,
-      gapStart: isMobile ? "3rem" : "4.5rem",
-      gapEnd: isMobile ? "3.5rem" : "5rem",
+      gapStart: isMobile ? "2.5rem" : "4.5rem",
+      gapEnd: isMobile ? "3.25rem" : "5rem",
       ease: "circ.out"
     });
 

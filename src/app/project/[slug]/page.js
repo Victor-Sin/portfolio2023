@@ -54,7 +54,7 @@ export default function ProjectPage({ params }) {
       blur: 5,
       scaleYStart: 1,
       gapStart: isMobile ? "2.5rem" : "5rem",
-      gapEnd: isMobile ? "3rem" : "5rem",
+      gapEnd: isMobile ? "3.25rem" : "5rem",
       delay: 0,
       ease: "linear",
       timeline: tl.current,
