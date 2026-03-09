@@ -166,7 +166,7 @@ export default function LayoutBody({ children }) {
         <div className={styles.canvasContainer}>
         {ready && canvasDeferred && (
           <Canvas 
-            style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0}}
+            style={{position: "fixed", top: 0, left: 0, width: "100dvw", height: "100lvh", background: "black", zIndex: 0, contain: "strict"}}
             gl={async (props) => {
               const renderer = new WebGPURenderer({
                 ...props,

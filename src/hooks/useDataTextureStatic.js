@@ -11,7 +11,7 @@ export default function useDataTextureStatic(
     influenceGain = 1.3,
     influenceGamma = 1
 ){
-    const {gl} = useThree()
+    const {gl,size} = useThree()
     const simWidth = simulationSize
     const simHeight = simulationSize
 
@@ -19,9 +19,7 @@ export default function useDataTextureStatic(
     const pointerVelocityRef = useRef({ x: 0, y: 0 })
     const pointerRef = useRef({ x: 0, y: 0 })
     const normalizedPointerRef = useRef({ x: 0, y: 0 })
-    const canvasBoundsRef = useRef(null)
     const dataTextureRef = useRef(null)
-    const resizeRafRef = useRef(0)
     const influenceScaleRef = useRef({ x: 1, y: 1 })
     const EPSILON_ASPECT = 1e-6
 
@@ -63,71 +61,31 @@ export default function useDataTextureStatic(
         return newTexture
     }, [simHeight, simWidth])
 
-    // Met a jour uniquement les bounds (independant de la texture)
-    const updateCanvasMetrics = useCallback(() => {
-        const canvas = gl.domElement
-        if (canvas) {
-            canvasBoundsRef.current = canvas.getBoundingClientRect()
-        }
-    }, [gl])
-
     // Creation initiale
     const dataTexture = useMemo(() => {
-        updateCanvasMetrics()
         return createTexture()
-    }, [createTexture, updateCanvasMetrics])
+    }, [createTexture])
 
-    // Resize: mise a jour des metrics seulement
+    // Recaler le centre pointeur apres changement de taille canvas
     useEffect(() => {
-        const handleResize = () => {
-            if (resizeRafRef.current) {
-                cancelAnimationFrame(resizeRafRef.current)
-            }
-            resizeRafRef.current = requestAnimationFrame(() => {
-                updateCanvasMetrics()
-                // Recaler le centre pointeur apres resize (repere NDC [-1, 1])
-                normalizedPointerRef.current.x = 0
-                normalizedPointerRef.current.y = 0
-                pointerRef.current.x = 0
-                pointerRef.current.y = 0
-                pointerVelocityRef.current.x = 0
-                pointerVelocityRef.current.y = 0
-                resizeRafRef.current = 0
-            })
-        }
-
-        window.addEventListener("resize", handleResize, { passive: true })
-        return () => {
-            window.removeEventListener("resize", handleResize)
-            if (resizeRafRef.current) {
-                cancelAnimationFrame(resizeRafRef.current)
-                resizeRafRef.current = 0
-            }
-        }
-    }, [updateCanvasMetrics])
+        normalizedPointerRef.current.x = 0
+        normalizedPointerRef.current.y = 0
+        pointerRef.current.x = 0
+        pointerRef.current.y = 0
+        pointerVelocityRef.current.x = 0
+        pointerVelocityRef.current.y = 0
+    }, [size.width, size.height])
 
     function updateTexture(mousePosition){
         if(dataTexture){
-            let bounds = canvasBoundsRef.current
-            if (!bounds) {
-                updateCanvasMetrics()
-                bounds = canvasBoundsRef.current
-                if (!bounds) {
-                    return // Pas de canvas disponible, skip cette frame
-                }
-            }
-
-            // mousePosition (R3F pointer) arrive en NDC [-1, 1].
-            // On reprojecte via les bounds canvas puis on conserve un repere NDC [-1, 1].
-            const clientX = ((mousePosition.x + 1) * 0.5) * bounds.width + bounds.left
-            const clientY = ((1 - (mousePosition.y + 1) * 0.5) * bounds.height) + bounds.top
-            const normalizedX = ((clientX - bounds.left) / bounds.width) * 2 - 1
-            const normalizedY = (1 - ((clientY - bounds.top) / bounds.height)) * 2 - 1
+            // mousePosition (R3F pointer) arrive deja en NDC [-1, 1].
+            const normalizedX = mousePosition.x
+            const normalizedY = mousePosition.y
 
             // Aligne l'interaction CPU sur le sampling shader:
             // ndcX inchange, ndcY divise par aspect.
-            const aspect = bounds.width > 0 && bounds.height > 0
-                ? bounds.width / bounds.height
+            const aspect = size.width > 0 && size.height > 0
+                ? size.width / size.height
                 : 1
             const { x: scaleX, y: scaleY } = getCursorScales(aspect)
             influenceScaleRef.current.x = scaleX
@@ -146,9 +104,8 @@ export default function useDataTextureStatic(
         
         const data = dt.image.data
         const h = simHeight
-        const bounds = canvasBoundsRef.current
-        const aspect = bounds && bounds.width > 0 && bounds.height > 0
-            ? bounds.width / bounds.height
+        const aspect = size.width > 0 && size.height > 0
+            ? size.width / size.height
             : 1
         
         // Mise à jour de la vélocité du pointeur

@@ -28,15 +28,11 @@ export default function Home() {
   },[navigationInfo.navigationType,navigationInfo.currentPage,navigationInfo.previousPage])
 
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <div className={styles.container}>
+      <main className={styles.container}>
           <HeroSection />
           <HomeSection />
           <Marker />
           <AboutSection />
-        </div>
       </main>
-    </div>
   );
 }
