@@ -28,9 +28,13 @@
     inset: 0;
     z-index: 9999;
     opacity: 1;
+    top: 0;
+    left: 0;
     pointer-events: all;
     background-color: #E2DCCF;
     will-change: opacity;
+    height: 100lvh;
+    width: 100dvw;
     contain: layout style;
     & > .loaderContent{
         position: absolute;
