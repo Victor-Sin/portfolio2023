@@ -3,7 +3,7 @@ import styles from "@/app/page.module.css";
 import HeroSection from "@/components/UI/HeroSection";
 import HomeSection from "@/components/UI/HomeSection";
 import AboutSection from "@/components/UI/AboutSection";
-import Marker from "@/components/UI/Marker";
+import Marker from "@/components/UI/ProjectSection";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";

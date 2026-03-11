@@ -3,11 +3,11 @@
 import "@/lib/webgpu-polyfill";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { WebGPURenderer } from "three/webgpu";
-import Refraction from "@/components/Refraction";
+import Refraction from "@/components/shaders/GlobalShader";
 import { ReactLenis, useLenis } from 'lenis/react'
 import { useEffect, useState, useRef, startTransition } from 'react'
 import useForceWebGLBackend from "@/hooks/useForceWebGLBackend";
-import ProjectImage from "@/components/ProjectImage";
+import ProjectImage from "@/components/shaders/ProjectImage";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { useNavigationInfo } from "@/contexts/NavigationContext";
 import { LoaderProvider, useIsLoaded, useSetSceneReady } from "@/contexts/LoaderContext";
